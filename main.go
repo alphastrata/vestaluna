@@ -16,6 +16,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -78,9 +79,6 @@ func pullSimpleCatalogData(XML []string) []simpleCatalog {
 	return catalogEntries
 }
 
-type guiVals struct {
-}
-
 func main() {
 
 	a := app.New()
@@ -114,17 +112,21 @@ func main() {
 
 	contentText.Wrapping = fyne.TextWrapWord
 
-	listView.OnSelected = func(id widget.ListItemID) {
-		ext := strings.Replace(sc[id].Format, "image/", "", 1)
-		lod := sc[id].LODs
-		catalogId := sc[id].Catalog
-		txt := fmt.Sprintf("Catalog:%s\nLODs:%d\nFormat:%s",
-			sc[id].Catalog, lod, ext)
-		contentText.Text = txt
+	var lod binding.Int
+	ext := binding.NewString()
+	catalogId := binding.NewString()
 
-		log.Info("scId set at :", ext)
-		log.Info("scLOD set at :", lod)
-		log.Info("Catalog at :", catalogId)
+	listView.OnSelected = func(id widget.ListItemID) {
+		extension := strings.Replace(sc[id].Format, "image/", "", 1)
+		// assign some globals, to use elsewhere
+		ext.Set(extension)
+		lod.Set(sc[id].LODs)
+		catalogId.Set(sc[id].Catalog)
+		log.Info("Extension, LOD and CATALOG bound")
+
+		txt := fmt.Sprintf("Catalog:%s\nLODs:%d\nFormat:%s",
+			sc[id].Catalog, sc[id].LODs, extension)
+		contentText.Text = txt
 
 		//TODO: display preview of the lowest LOD available (tile 0/0/0.png)
 	}
@@ -141,24 +143,26 @@ func main() {
 			widget.NewButton("Download", func() {
 				log.Println("Downloading")
 				//TODO: how to get the right index down here after it's set up there..
+				wg.Add(1)
 				go func(wg *sync.WaitGroup, idx int) {
-					wg.Add(1)
 					defer wg.Done()
-					if wmts.FetchExact(sc[idx].XMLLocation, 3) {
+					lodCurrent, _ := lod.Get()
+					if wmts.FetchExact(sc[idx].XMLLocation, lodCurrent) {
 						log.Println("Download Complete")
 					} else {
 						log.Println("Download was incomplete...")
-						wmts.FetchExact(sc[idx].XMLLocation, 3)
+						wmts.FetchExact(sc[idx].XMLLocation, lodCurrent)
 					}
 
 				}(&wg, 1)
 			}),
 			widget.NewButton("Concat", func() {
 				log.Println("Concatenating")
-				dirpath := filepath.Join("downloads", sc[1].Catalog)
-				ext := strings.Replace(sc[1].Format, "image/", "", 1)
-				tools.ConcatWithPython(dirpath, 3, ext)
-				//callConcat(dirpath, "3", true)
+				catalog, _ := catalogId.Get()
+				dirpath := filepath.Join("downloads", catalog)
+				ext, _ := ext.Get()
+				lodCurrent, _ := lod.Get()
+				tools.ConcatWithPython(dirpath, lodCurrent, ext)
 				log.Println("Concatenation Complete")
 
 			}),
@@ -178,11 +182,5 @@ func main() {
 	w.SetContent(split)
 
 	w.ShowAndRun()
-
-}
-
-func callConcat(catalog, LOD string, show bool) {
-	log.Println("Concatenating")
-	tools.RunConcatenations(LOD, catalog)
 
 }
