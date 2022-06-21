@@ -13,10 +13,11 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"fyne.io/fyne"
-	"fyne.io/fyne/app"
-	"fyne.io/fyne/container"
-	"fyne.io/fyne/widget"
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/widget"
 )
 
 var XML = []string{"https://trek.nasa.gov/tiles/Moon/EQ/LRO_LOLA_Shade_Global_128ppd_v04/1.0.0/WMTSCapabilities.xml",
@@ -93,6 +94,11 @@ func main() {
 
 	xmlList := &XML
 
+	var scId binding.String
+	var scLOD binding.Int
+	var catalogString binding.String
+	var catIDX binding.Int
+
 	sc := pullSimpleCatalogData(*xmlList)
 	log.Println("LEN:", len(sc))
 	for _, xml := range *xmlList {
@@ -115,11 +121,22 @@ func main() {
 	contentText.Wrapping = fyne.TextWrapWord
 
 	listView.OnSelected = func(id widget.ListItemID) {
+		catIDX.Set(id)
+		ext := strings.Replace(sc[id].Format, "image/", "", 1)
+		lod := sc[id].LODs
+		catalogId := sc[id].Catalog
 		txt := fmt.Sprintf("Catalog:%s\nLODs:%d\nFormat:%s",
-			sc[id].Catalog, sc[id].LODs, strings.Replace(sc[id].Format, "image/", "", 1))
+			sc[id].Catalog, lod, ext)
 		contentText.Text = txt
-		//TODO: display preview of the lowest LOD available (tile 0/0/0.png)
+		scId.Set(ext)
+		scLOD.Set(lod)
+		catalogString.Set(catalogId)
 
+		log.Info("scId set at :", ext)
+		log.Info("scLOD set at :", lod)
+		log.Info("Catalog at :", catalogId)
+
+		//TODO: display preview of the lowest LOD available (tile 0/0/0.png)
 	}
 
 	split := container.NewHSplit(
@@ -134,22 +151,32 @@ func main() {
 			widget.NewButton("Download", func() {
 				log.Println("Downloading")
 				//TODO: how to get the right index down here after it's set up there..
-				go func(wg *sync.WaitGroup) {
+				idx, err := catIDX.Get()
+				if err != nil {
+					log.Fatal("unable to get a valid catalog idx:", err)
+				}
+				go func(wg *sync.WaitGroup, idx int) {
 					wg.Add(1)
 					defer wg.Done()
-					if wmts.FetchExact(sc[5].XMLLocation, 3) {
+					if wmts.FetchExact(sc[idx].XMLLocation, 3) {
 						log.Println("Download Complete")
 					} else {
 						log.Println("Download was incomplete...")
-						wmts.FetchExact(sc[5].XMLLocation, 3)
+						wmts.FetchExact(sc[idx].XMLLocation, 3)
 					}
 
-				}(&wg)
+				}(&wg, idx)
 			}),
 			widget.NewButton("Concat", func() {
+				idx, err := catIDX.Get()
+				if err != nil {
+					log.Fatal("unable to get a valid catalog idx:", err)
+				}
 				log.Println("Concatenating")
-				dirpath := filepath.Join("downloads", sc[2].Catalog)
-				callConcat(dirpath, "3", true)
+				dirpath := filepath.Join("downloads", sc[idx].Catalog)
+				ext := strings.Replace(sc[idx].Format, "image/", "", 1)
+				tools.ConcatWithPython(dirpath, 3, ext)
+				//callConcat(dirpath, "3", true)
 				log.Println("Concatenation Complete")
 
 			}),

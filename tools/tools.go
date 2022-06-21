@@ -3,11 +3,13 @@ package tools
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/inancgumus/screen"
 	"github.com/schollz/progressbar"
@@ -21,6 +23,17 @@ func checkSize(path string) bool {
 		return true
 	}
 	return false
+}
+
+func ConcatWithPython(tp string, lod int, format string) {
+	commandString := fmt.Sprintf("python3 %s %d %s", tp, lod, format)
+	cmd := exec.Command(commandString)
+	res, err := cmd.Output()
+	if err != nil {
+		log.Error("Call to python failed:", err)
+		log.Fatal("resulting in:", res)
+	}
+
 }
 
 func RunConcatenations(depth, dir string) {
@@ -79,7 +92,7 @@ func RunConcatenations(depth, dir string) {
 	}
 
 	bar1 := progressbar.New(Height * Width)
-	fmt.Println("Width:", Width, "Height:", Height)
+	log.Println("Width:", Width, "Height:", Height)
 
 	//Make horizontal slices
 	for r := 0; r < Height; r++ {
@@ -108,13 +121,13 @@ func RunConcatenations(depth, dir string) {
 
 	screen.MoveTopLeft()
 	screen.Clear()
-	fmt.Println("\n*********************************")
+	log.Println("\n*********************************")
 
 	hSlices, err := ioutil.ReadDir(filepath.Join("tmp"))
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Num Slices:", hSlices)
+	log.Println("Num Slices:", hSlices)
 
 	// Vertitacally concatenate the horizontal slices, loading them from disk
 	fin := gocv.IMRead(filepath.Join("tmp", "0"+ext), gocv.IMReadColor)
@@ -131,7 +144,7 @@ func RunConcatenations(depth, dir string) {
 
 	gocv.IMWrite("stitched_results/"+catalog+"_"+strconv.Itoa(LOD)+ext, fin)
 
-	fmt.Println("Final size:", fin.Size()[0], fin.Size()[1])
+	log.Println("Final size:", fin.Size()[0], fin.Size()[1])
 
 	// DEBUG: Show the final img
 	window := gocv.NewWindow("MARS")
