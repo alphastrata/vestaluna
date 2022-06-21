@@ -81,7 +81,7 @@ func checkURL(url string) bool {
 
 //download the image from the url
 func downloadURL(url, filename string, wg *sync.WaitGroup) {
-	defer wg.Done()
+	//defer wg.Done()
 
 	resp, err := http.Get(url)
 	checkError(err)
@@ -92,7 +92,7 @@ func downloadURL(url, filename string, wg *sync.WaitGroup) {
 	io.Copy(f, resp.Body)
 
 	resp.Body.Close()
-	log.Println("Downloading:", url)
+	// log.Println("Downloading:", url)
 	f.Close()
 
 }
@@ -289,7 +289,7 @@ func Fetch(wmtsXML string, depth string) {
 
 				}
 			}
-			wg.Wait()
+			//wg.Wait()
 		}
 
 	}

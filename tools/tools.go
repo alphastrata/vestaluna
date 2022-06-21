@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -26,8 +25,9 @@ func checkSize(path string) bool {
 }
 
 func ConcatWithPython(tp string, lod int, format string) {
-	commandString := fmt.Sprintf("python3 %s %d %s", tp, lod, format)
-	cmd := exec.Command(commandString)
+	lodString := strconv.Itoa(lod)
+	cmd := exec.Command("python3", "scripts/stitcher.py", tp, lodString, format)
+	log.Println(cmd)
 	res, err := cmd.Output()
 	if err != nil {
 		log.Error("Call to python failed:", err)

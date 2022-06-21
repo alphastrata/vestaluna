@@ -16,7 +16,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -94,11 +93,6 @@ func main() {
 
 	xmlList := &XML
 
-	var scId binding.String
-	var scLOD binding.Int
-	var catalogString binding.String
-	var catIDX binding.Int
-
 	sc := pullSimpleCatalogData(*xmlList)
 	log.Println("LEN:", len(sc))
 	for _, xml := range *xmlList {
@@ -121,16 +115,12 @@ func main() {
 	contentText.Wrapping = fyne.TextWrapWord
 
 	listView.OnSelected = func(id widget.ListItemID) {
-		catIDX.Set(id)
 		ext := strings.Replace(sc[id].Format, "image/", "", 1)
 		lod := sc[id].LODs
 		catalogId := sc[id].Catalog
 		txt := fmt.Sprintf("Catalog:%s\nLODs:%d\nFormat:%s",
 			sc[id].Catalog, lod, ext)
 		contentText.Text = txt
-		scId.Set(ext)
-		scLOD.Set(lod)
-		catalogString.Set(catalogId)
 
 		log.Info("scId set at :", ext)
 		log.Info("scLOD set at :", lod)
@@ -151,10 +141,6 @@ func main() {
 			widget.NewButton("Download", func() {
 				log.Println("Downloading")
 				//TODO: how to get the right index down here after it's set up there..
-				idx, err := catIDX.Get()
-				if err != nil {
-					log.Fatal("unable to get a valid catalog idx:", err)
-				}
 				go func(wg *sync.WaitGroup, idx int) {
 					wg.Add(1)
 					defer wg.Done()
@@ -165,16 +151,12 @@ func main() {
 						wmts.FetchExact(sc[idx].XMLLocation, 3)
 					}
 
-				}(&wg, idx)
+				}(&wg, 1)
 			}),
 			widget.NewButton("Concat", func() {
-				idx, err := catIDX.Get()
-				if err != nil {
-					log.Fatal("unable to get a valid catalog idx:", err)
-				}
 				log.Println("Concatenating")
-				dirpath := filepath.Join("downloads", sc[idx].Catalog)
-				ext := strings.Replace(sc[idx].Format, "image/", "", 1)
+				dirpath := filepath.Join("downloads", sc[1].Catalog)
+				ext := strings.Replace(sc[1].Format, "image/", "", 1)
 				tools.ConcatWithPython(dirpath, 3, ext)
 				//callConcat(dirpath, "3", true)
 				log.Println("Concatenation Complete")
