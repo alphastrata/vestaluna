@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os/exec"
 	"path/filepath"
 	"sync"
@@ -15,8 +16,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	log "github.com/sirupsen/logrus"
 
 	"github.com/schollz/progressbar/v3"
 )
@@ -284,7 +283,7 @@ func Fetch(wmtsXML string, depth string) {
 						go downloadURL(url, filename, &wg)
 					}
 				} else {
-					log.Debug("URL not valid:", url)
+					log.Println("URL not valid:", url)
 					misses = append(misses, url)
 
 				}
@@ -356,7 +355,7 @@ func FetchExact(xmlURL string, LOD int) bool {
 						downloadURL(url, filename, &wg)
 
 					} else {
-						log.Debug("URL not valid:", url)
+						log.Println("URL not valid:", url)
 						misses = append(misses, url)
 
 					}

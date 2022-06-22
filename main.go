@@ -6,12 +6,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"vestaluna/tools"
 	"vestaluna/wmts"
 
-	log "github.com/sirupsen/logrus"
+	"log"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -112,23 +113,32 @@ func main() {
 
 	contentText.Wrapping = fyne.TextWrapWord
 
-	var lod binding.Int
+	lod := binding.NewString()
 	ext := binding.NewString()
-	catalogId := binding.NewString()
+	catalogID := binding.NewString()
 
 	listView.OnSelected = func(id widget.ListItemID) {
 		extension := strings.Replace(sc[id].Format, "image/", "", 1)
-		// assign some globals, to use elsewhere
-		ext.Set(extension)
-		lod.Set(sc[id].LODs)
-		catalogId.Set(sc[id].Catalog)
-		log.Info("Extension, LOD and CATALOG bound")
 
 		txt := fmt.Sprintf("Catalog:%s\nLODs:%d\nFormat:%s",
 			sc[id].Catalog, sc[id].LODs, extension)
 		contentText.Text = txt
 
-		//TODO: display preview of the lowest LOD available (tile 0/0/0.png)
+		log.Println("Setting globals")
+		ext.Set(extension)
+		_, _ = ext.Get()
+		log.Println("Set ext")
+
+		catalogID.Set(sc[id].Catalog)
+		_, _ = catalogID.Get()
+		log.Println("Set cat")
+
+		// HERE: this is where we're breaking things..
+		var lodCurrent string = fmt.Sprintf("%d", (sc[id].LODs))
+		lod.Set(lodCurrent)
+		log.Println("Set lod")
+		_, _ = lod.Get()
+
 	}
 
 	split := container.NewHSplit(
@@ -147,22 +157,24 @@ func main() {
 				go func(wg *sync.WaitGroup, idx int) {
 					defer wg.Done()
 					lodCurrent, _ := lod.Get()
-					if wmts.FetchExact(sc[idx].XMLLocation, lodCurrent) {
+					lod, _ := strconv.Atoi(lodCurrent)
+					if wmts.FetchExact(sc[idx].XMLLocation, lod) {
 						log.Println("Download Complete")
 					} else {
 						log.Println("Download was incomplete...")
-						wmts.FetchExact(sc[idx].XMLLocation, lodCurrent)
+						wmts.FetchExact(sc[idx].XMLLocation, lod)
 					}
 
-				}(&wg, 1)
+				}(&wg, 1) //NOTE: explicitly passing in mars atm.
 			}),
 			widget.NewButton("Concat", func() {
 				log.Println("Concatenating")
-				catalog, _ := catalogId.Get()
+				catalog, _ := catalogID.Get()
 				dirpath := filepath.Join("downloads", catalog)
 				ext, _ := ext.Get()
 				lodCurrent, _ := lod.Get()
-				tools.ConcatWithPython(dirpath, lodCurrent, ext)
+				lod, _ := strconv.Atoi(lodCurrent)
+				tools.ConcatWithPython(dirpath, lod, ext)
 				log.Println("Concatenation Complete")
 
 			}),

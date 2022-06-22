@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"log"
 
 	"github.com/inancgumus/screen"
 	"github.com/schollz/progressbar"
@@ -30,7 +30,7 @@ func ConcatWithPython(tp string, lod int, format string) {
 	log.Println(cmd)
 	res, err := cmd.Output()
 	if err != nil {
-		log.Error("Call to python failed:", err)
+		log.Println("Call to python failed:", err)
 		log.Fatal("resulting in:", res)
 	}
 

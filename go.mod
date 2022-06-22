@@ -7,7 +7,6 @@ require (
 	github.com/inancgumus/screen v0.0.0-20190314163918-06e984b86ed3
 	github.com/schollz/progressbar v1.0.0
 	github.com/schollz/progressbar/v3 v3.8.6
-	github.com/sirupsen/logrus v1.8.1
 	gocv.io/x/gocv v0.30.0
 )
 
