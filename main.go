@@ -127,16 +127,13 @@ func main() {
 		log.Println("Setting globals")
 		ext.Set(extension)
 		_, _ = ext.Get()
-		log.Println("Set ext")
 
-		catalogID.Set(sc[id].Catalog)
+		catalogID.Set(strconv.Itoa(id))
 		_, _ = catalogID.Get()
-		log.Println("Set cat")
 
 		// HERE: this is where we're breaking things..
 		var lodCurrent string = fmt.Sprintf("%d", (sc[id].LODs))
 		lod.Set(lodCurrent)
-		log.Println("Set lod")
 		_, _ = lod.Get()
 
 	}
@@ -153,11 +150,27 @@ func main() {
 			widget.NewButton("Download", func() {
 				log.Println("Downloading")
 				//TODO: how to get the right index down here after it's set up there..
+				catIDCurrent, err := catalogID.Get()
+				if err != nil {
+					log.Fatal("Error catalogID.Get()", err)
+				}
+				catID, err := strconv.Atoi(catIDCurrent)
+				if err != nil {
+					log.Fatal("Error parsing catIDCurrent into int -- maybe it received invalid data", err)
+				}
 				wg.Add(1)
 				go func(wg *sync.WaitGroup, idx int) {
 					defer wg.Done()
-					lodCurrent, _ := lod.Get()
-					lod, _ := strconv.Atoi(lodCurrent)
+
+					lodCurrent, err := lod.Get()
+					if err != nil {
+						log.Fatal("Error lod.Get()", err)
+					}
+					lod, err := strconv.Atoi(lodCurrent)
+					if err != nil {
+						log.Fatal("Error parsing lod into int -- maybe it received invalid data", err)
+					}
+
 					if wmts.FetchExact(sc[idx].XMLLocation, lod) {
 						log.Println("Download Complete")
 					} else {
@@ -165,7 +178,7 @@ func main() {
 						wmts.FetchExact(sc[idx].XMLLocation, lod)
 					}
 
-				}(&wg, 1) //NOTE: explicitly passing in mars atm.
+				}(&wg, catID) //NOTE: explicitly passing in mars atm.
 			}),
 			widget.NewButton("Concat", func() {
 				log.Println("Concatenating")
