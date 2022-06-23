@@ -171,6 +171,7 @@ func main() {
 						log.Fatal("Error parsing lod into int -- maybe it received invalid data", err)
 					}
 
+					log.Println("ERROR WAS HERE: ", sc[idx].XMLLocation)
 					if wmts.FetchExact(sc[idx].XMLLocation, lod) {
 						log.Println("Download Complete")
 					} else {

@@ -322,14 +322,22 @@ func FetchExact(xmlURL string, LOD int) bool {
 	log.Println("TileMatrixSetID:", capabilities.Contents.Layer.TileMatrixSetLink.TileMatrixSet)
 
 	style := capabilities.Contents.Layer.Style.Identifier
+	log.Println("Style:", capabilities.Contents.Layer.Style.Identifier)
+
 	tileMatrixSet := capabilities.Contents.TileMatrixSet.Identifier
+	log.Println("TileMatrixSet:", capabilities.Contents.TileMatrixSet.Identifier)
+
 	url := capabilities.Contents.Layer.ResourceURL.Template
+	log.Println("URL: ", url)
 
 	var misses []string
 	var wg sync.WaitGroup
 
 	matrixWidth := (capabilities.Contents.TileMatrixSet.TileMatrix[LOD].MatrixWidth)
 	matrixHeight := (capabilities.Contents.TileMatrixSet.TileMatrix[LOD].MatrixHeight)
+	log.Println(matrixWidth)
+	log.Println(matrixHeight)
+
 	Height, err := strconv.ParseFloat(matrixHeight, 64)
 	checkError(err)
 	Width, err := strconv.ParseFloat(matrixWidth, 64)
