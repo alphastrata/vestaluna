@@ -39,7 +39,10 @@ if __name__ == "__main__":
     vstack = cv2.vconcat(verticals)
 
     outname = tiles_path.split("/")[-1]
-    resname = os.path.join(completed, f"{lod}_{outname}.{ext}")
+    # resname = os.path.join(completed, f"{lod}_{outname}.{ext}")
+    resname = os.path.join(
+        completed, f"{lod}_{outname}.jpg"
+    )  # I am explicitly overriding for .jpg to save space
 
     cv2.imwrite(f"{resname}", vstack)
 

@@ -98,7 +98,6 @@ func main() {
 	a := app.New()
 
 	var wg sync.WaitGroup
-	//lod := binding.NewString()
 	lod := binding.NewInt()
 	lodSelect := binding.NewInt()
 	ext := binding.NewString()
@@ -143,8 +142,6 @@ func main() {
 		ext.Set(extension)
 		catalogID.Set(strconv.Itoa(id))
 
-		//var lodCurrent string = fmt.Sprintf("%d", (sc[id].LODs - 1)) // need to account for the UI non-zero-indexing
-		//var lodCurrent string = fmt.Sprintf("%d", int(3)) // OVERRIDING BECAUSE TESTING...
 		lod.Set(sc[id].LODs)
 
 	}
@@ -216,7 +213,7 @@ func main() {
 				log.Println("Concatenation Complete")
 
 			}),
-			widget.NewButton("Disk", func() {
+			widget.NewButton("Tiles", func() {
 				catID, _ := catalogID.Get()
 				idx, _ := strconv.Atoi(catID)
 				dirpath := filepath.Join("downloads", sc[idx].Catalog)
@@ -230,7 +227,13 @@ func main() {
 
 			}),
 			widget.NewButton("ConcatResults", func() {
-				cmd := exec.Command("xdg-open", "stitched_results")
+				catID, _ := catalogID.Get()
+				lod, _ := lodSelect.Get()
+				idx, _ := strconv.Atoi(catID)
+				result := strconv.Itoa(lod) + "_" + sc[idx].Catalog + ".jpg"
+				concatPath := filepath.Join("stitched_results", result)
+
+				cmd := exec.Command("xdg-open", concatPath)
 				err := cmd.Run()
 				if err != nil {
 					log.Println(err)
