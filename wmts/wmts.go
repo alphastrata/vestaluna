@@ -79,8 +79,7 @@ func checkURL(url string) bool {
 }
 
 //download the image from the url
-func downloadURL(url, filename string, wg *sync.WaitGroup) {
-	//defer wg.Done()
+func downloadURL(url, filename string) {
 
 	resp, err := http.Get(url)
 	checkError(err)
@@ -91,7 +90,6 @@ func downloadURL(url, filename string, wg *sync.WaitGroup) {
 	io.Copy(f, resp.Body)
 
 	resp.Body.Close()
-	// log.Println("Downloading:", url)
 	f.Close()
 
 }
@@ -280,7 +278,7 @@ func Fetch(wmtsXML string, depth string) {
 				if !isAlreadyDownloaded(filename) {
 					if checkURL(url) {
 						wg.Add(1)
-						go downloadURL(url, filename, &wg)
+						go downloadURL(url, filename)
 					}
 				} else {
 					log.Println("URL not valid:", url)
@@ -302,8 +300,9 @@ func Fetch(wmtsXML string, depth string) {
 }
 
 // Fetch an exact dataset pertaining to a specific LOD
-func FetchExact(xmlURL string, LOD int) bool {
+func FetchExact(xmlURL string, LOD int, wg *sync.WaitGroup) bool {
 
+	var misses []string
 	start := time.Now()
 
 	checkURL(xmlURL)
@@ -324,43 +323,44 @@ func FetchExact(xmlURL string, LOD int) bool {
 	style := capabilities.Contents.Layer.Style.Identifier
 	log.Println("Style:", capabilities.Contents.Layer.Style.Identifier)
 
+	// PROBLEM HERE...
+	log.Println("PROBLEMS: ", capabilities.Contents.TileMatrixSet.TileMatrix[LOD].MatrixWidth)
+	log.Println("PROBLEMS: ", capabilities.Contents.TileMatrixSet.TileMatrix[LOD].MatrixHeight)
+
+	matrixWidth := (capabilities.Contents.TileMatrixSet.TileMatrix[LOD].MatrixWidth)
+	matrixHeight := (capabilities.Contents.TileMatrixSet.TileMatrix[LOD].MatrixHeight)
+	log.Println("WMTS matrixWidth :", matrixWidth)
+	log.Println("WMTS matrixHeight:", matrixHeight)
+
 	tileMatrixSet := capabilities.Contents.TileMatrixSet.Identifier
 	log.Println("TileMatrixSet:", capabilities.Contents.TileMatrixSet.Identifier)
 
 	url := capabilities.Contents.Layer.ResourceURL.Template
 	log.Println("URL: ", url)
 
-	var misses []string
-	var wg sync.WaitGroup
-
-	matrixWidth := (capabilities.Contents.TileMatrixSet.TileMatrix[LOD].MatrixWidth)
-	matrixHeight := (capabilities.Contents.TileMatrixSet.TileMatrix[LOD].MatrixHeight)
-	log.Println(matrixWidth)
-	log.Println(matrixHeight)
-
-	Height, err := strconv.ParseFloat(matrixHeight, 64)
-	checkError(err)
-	Width, err := strconv.ParseFloat(matrixWidth, 64)
+	height, err := strconv.ParseFloat(matrixHeight, 64)
 	checkError(err)
 
-	log.Println("MatrixWidth:", matrixWidth)
-	log.Println("MatrixHeight:", matrixHeight)
-	log.Println("Total Tiles to fetch:", Width*Height)
+	width, err := strconv.ParseFloat(matrixWidth, 64)
+	checkError(err)
 
-	var progBarLimit int64 = int64(Width * Height)
+	var progBarLimit int64 = int64(width * height)
 	bar := progressbar.Default(progBarLimit)
-	for row := 0; row < int(Height); row++ {
+
+	log.Println("Total Tiles to fetch:", width*height)
+	for row := 0; row < int(height); row++ {
 		bar.Add(1)
+
 		wg.Add(1)
 		go func(row int) {
-			for col := 0; col < int(Width); col++ {
+			for col := 0; col < int(width); col++ {
 				bar.Add(1)
 				catalog := capabilities.Contents.Layer.Identifier
 				url := buildURL(url, style, tileMatrixSet, &LOD, row, col)
 				filename := makeFilenameFromURL(url, catalog)
 				if !isAlreadyDownloaded(filename) {
 					if checkURL(url) {
-						downloadURL(url, filename, &wg)
+						downloadURL(url, filename)
 
 					} else {
 						log.Println("URL not valid:", url)
@@ -373,7 +373,7 @@ func FetchExact(xmlURL string, LOD int) bool {
 			}
 
 		}(row)
-		//wg.Wait()
+		wg.Done()
 	}
 	wg.Wait() //NOTE: redundant?
 

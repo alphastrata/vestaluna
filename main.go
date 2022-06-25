@@ -124,7 +124,6 @@ func main() {
 			sc[id].Catalog, sc[id].LODs, extension)
 		contentText.Text = txt
 
-		log.Println("Setting globals")
 		ext.Set(extension)
 		_, _ = ext.Get()
 
@@ -132,7 +131,7 @@ func main() {
 		_, _ = catalogID.Get()
 
 		// HERE: this is where we're breaking things..
-		var lodCurrent string = fmt.Sprintf("%d", (sc[id].LODs))
+		var lodCurrent string = fmt.Sprintf("%d", (sc[id].LODs - 1)) // need to account for the UI non-zero-indexing
 		lod.Set(lodCurrent)
 		_, _ = lod.Get()
 
@@ -148,7 +147,7 @@ func main() {
 
 			container.NewMax(contentText),
 			widget.NewButton("Download", func() {
-				log.Println("Downloading")
+				log.Println("Downloading...")
 				//TODO: how to get the right index down here after it's set up there..
 				catIDCurrent, err := catalogID.Get()
 				if err != nil {
@@ -158,6 +157,7 @@ func main() {
 				if err != nil {
 					log.Fatal("Error parsing catIDCurrent into int -- maybe it received invalid data", err)
 				}
+
 				wg.Add(1)
 				go func(wg *sync.WaitGroup, idx int) {
 					defer wg.Done()
@@ -171,16 +171,17 @@ func main() {
 						log.Fatal("Error parsing lod into int -- maybe it received invalid data", err)
 					}
 
-					log.Println("ERROR WAS HERE: ", sc[idx].XMLLocation)
-					if wmts.FetchExact(sc[idx].XMLLocation, lod) {
+					//log.Println("ERROR WAS HERE: ", sc[idx].XMLLocation)
+					if wmts.FetchExact(sc[idx].XMLLocation, lod, wg) {
 						log.Println("Download Complete")
 					} else {
 						log.Println("Download was incomplete...")
-						wmts.FetchExact(sc[idx].XMLLocation, lod)
+						wmts.FetchExact(sc[idx].XMLLocation, lod, wg)
 					}
 
 				}(&wg, catID) //NOTE: explicitly passing in mars atm.
 			}),
+
 			widget.NewButton("Concat", func() {
 				log.Println("Concatenating")
 				catalog, _ := catalogID.Get()
@@ -192,7 +193,6 @@ func main() {
 				log.Println("Concatenation Complete")
 
 			}),
-			// run the xdg-open command to open the folder
 			widget.NewButton("Disk", func() {
 				log.Println("Opening disk")
 				cmd := exec.Command("xdg-open", "downloads")
@@ -209,4 +209,5 @@ func main() {
 
 	w.ShowAndRun()
 
+	wg.Wait()
 }
