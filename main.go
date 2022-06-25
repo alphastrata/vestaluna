@@ -183,7 +183,7 @@ func main() {
 						wmts.FetchExact(sc[idx].XMLLocation, lod, wg)
 					}
 
-				}(&wg, catID) //NOTE: explicitly passing in mars atm.
+				}(&wg, catID)
 			}),
 
 			widget.NewButton("Concat", func() {
