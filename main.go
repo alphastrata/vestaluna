@@ -29,6 +29,8 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/layout"
+
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -96,7 +98,8 @@ func main() {
 	a := app.New()
 
 	var wg sync.WaitGroup
-	lod := binding.NewString()
+	//lod := binding.NewString()
+	lod := binding.NewInt()
 	lodSelect := binding.NewInt()
 	ext := binding.NewString()
 	catalogID := binding.NewString()
@@ -138,23 +141,25 @@ func main() {
 		contentText.Text = txt
 
 		ext.Set(extension)
-		_, _ = ext.Get()
-
 		catalogID.Set(strconv.Itoa(id))
-		_, _ = catalogID.Get()
 
 		//var lodCurrent string = fmt.Sprintf("%d", (sc[id].LODs - 1)) // need to account for the UI non-zero-indexing
-		var lodCurrent string = fmt.Sprintf("%d", int(3)) // OVERRIDING BECAUSE TESTING...
-		lod.Set(lodCurrent)
-		_, _ = lod.Get()
+		//var lodCurrent string = fmt.Sprintf("%d", int(3)) // OVERRIDING BECAUSE TESTING...
+		lod.Set(sc[id].LODs)
 
 	}
 
 	pbar := widget.NewProgressBar()
-	combo := widget.NewSelect([]string{"LOD1", "LOD2", "LOD3"}, func(value string) {
+	combo := widget.NewSelect([]string{"LOD1", "LOD2", "LOD3", "LOD4", "LOD5", "LOD6"}, func(value string) {
 		parsedValue, err := strconv.Atoi(strings.ReplaceAll(value, "LOD", ""))
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		maxLOD, _ := lod.Get()
+		if parsedValue > maxLOD {
+			lodSelect.Set(parsedValue)
+
 		}
 
 		lodSelect.Set(parsedValue)
@@ -162,6 +167,7 @@ func main() {
 	combo.SetSelectedIndex(0)
 
 	split := container.NewHSplit(
+
 		listView,
 		container.NewVBox(
 
@@ -200,19 +206,21 @@ func main() {
 
 			widget.NewButton("Concat", func() {
 				log.Println("Concatenating")
-				catalogName, _ := catalogName.Get()
-				dirpath := filepath.Join("downloads", catalogName)
+				catID, _ := catalogID.Get()
+				idx, _ := strconv.Atoi(catID)
+				dirpath := filepath.Join("downloads", sc[idx].Catalog)
 
-				ext, _ := ext.Get()
 				lod, _ := lodSelect.Get()
 
-				tools.ConcatWithPython(dirpath, lod, ext)
+				tools.ConcatWithPython(dirpath, lod)
 				log.Println("Concatenation Complete")
 
 			}),
 			widget.NewButton("Disk", func() {
-				catalogName, _ := catalogName.Get()
-				dirpath := filepath.Join("downloads", catalogName)
+				catID, _ := catalogID.Get()
+				idx, _ := strconv.Atoi(catID)
+				dirpath := filepath.Join("downloads", sc[idx].Catalog)
+
 				log.Println("Opening disk")
 				cmd := exec.Command("xdg-open", dirpath)
 				err := cmd.Run()
@@ -230,6 +238,7 @@ func main() {
 
 			}),
 			combo,
+			layout.NewSpacer(),
 			pbar,
 		),
 	)

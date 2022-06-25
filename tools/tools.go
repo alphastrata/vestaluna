@@ -7,9 +7,9 @@ import (
 	"log"
 )
 
-func ConcatWithPython(tp string, lod int, format string) {
+func ConcatWithPython(tp string, lod int) {
 	lodString := strconv.Itoa(lod)
-	cmd := exec.Command("python", "scripts/stitcher.py", tp, lodString, format)
+	cmd := exec.Command("python", "scripts/stitcher.py", tp, lodString)
 	log.Println(cmd)
 	res, err := cmd.Output()
 	if err != nil {

@@ -55,8 +55,6 @@ func makeFilenameFromURL(url string, catalog string) string {
 	//Make that catalog dir if it doesn't exist
 	catalogpath := filepath.Join("downloads", catalog)
 	if _, err := os.Stat(catalogpath); os.IsNotExist(err) {
-		checkError(err)
-	} else {
 		os.Mkdir(catalogpath, 0777)
 	}
 
@@ -79,17 +77,15 @@ func checkURL(url string) bool {
 
 //download the image from the url
 func downloadURL(url, filename string) {
-
 	resp, err := http.Get(url)
 	checkError(err)
+	defer resp.Body.Close()
 
 	f, err := os.Create(filename)
 	checkError(err)
+	defer f.Close()
 
 	io.Copy(f, resp.Body)
-
-	resp.Body.Close()
-	f.Close()
 
 }
 
@@ -258,7 +254,7 @@ func FetchExact(xmlURL string, LOD int, uiPbar *widget.ProgressBar) bool {
 	log.Println("Total Tiles to fetch:", width*height)
 
 	uiPbar.Min = 0.0
-	uiPbar.Max = float64(width)
+	uiPbar.Max = float64(width * height)
 
 	for row := 0; row < int(height); row++ {
 		bar.Add(1)
@@ -280,18 +276,19 @@ func FetchExact(xmlURL string, LOD int, uiPbar *widget.ProgressBar) bool {
 						downloadURL(url, filename)
 
 					} else {
-						log.Println("URL not valid:", url)
+						log.Print("URL not valid:", url)
 						misses = append(misses, url)
 
 					}
 				} else {
-					log.Println("File already exists:", filename)
+					log.Print("File already exists:", filename)
 				}
 			}
 
 		}(row)
+		uiPbar.Refresh()
 	}
-	uiPbar.Refresh()
+	uiPbar.SetValue(width * height)
 	wg.Wait()
 
 	if len(misses) > 0 {
