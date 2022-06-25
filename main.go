@@ -173,6 +173,7 @@ func main() {
 				if err != nil {
 					log.Fatal("Error catalogID.Get()", err)
 				}
+
 				catID, err := strconv.Atoi(catIDCurrent)
 				if err != nil {
 					log.Fatal("Error parsing catIDCurrent into int -- maybe it received invalid data", err)
@@ -187,11 +188,11 @@ func main() {
 						log.Fatal("Error lod.Get()", err)
 					}
 
-					if wmts.FetchExact(sc[idx].XMLLocation, lod, wg, pbar) {
+					if wmts.FetchExact(sc[idx].XMLLocation, lod, pbar) {
 						log.Println("Download Complete")
 					} else {
 						log.Println("Download was incomplete...")
-						wmts.FetchExact(sc[idx].XMLLocation, lod, wg, pbar)
+						wmts.FetchExact(sc[idx].XMLLocation, lod, pbar)
 					}
 
 				}(&wg, catID, pbar)
@@ -236,6 +237,6 @@ func main() {
 	w.SetContent(split)
 
 	w.ShowAndRun()
-
 	wg.Wait()
+
 }

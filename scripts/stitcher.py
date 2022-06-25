@@ -10,6 +10,7 @@ if __name__ == "__main__":
 
     tiles_path = f"{sys.argv[1]}"
     lod = sys.argv[2]
+    _ = sys.argv[3]
 
     tiles_in_dir = sorted(os.listdir(tiles_path))
     r = 0

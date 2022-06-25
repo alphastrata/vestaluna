@@ -13,7 +13,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"fyne.io/fyne/v2/widget"
 	"github.com/schollz/progressbar/v3"
@@ -56,8 +55,9 @@ func makeFilenameFromURL(url string, catalog string) string {
 	//Make that catalog dir if it doesn't exist
 	catalogpath := filepath.Join("downloads", catalog)
 	if _, err := os.Stat(catalogpath); os.IsNotExist(err) {
-		err := os.Mkdir(catalogpath, 0777)
 		checkError(err)
+	} else {
+		os.Mkdir(catalogpath, 0777)
 	}
 
 	sp = filepath.Join(catalogpath, sp)
@@ -212,10 +212,10 @@ func LoadCatalog(wmtsXML string) Capabilities {
 }
 
 // Fetch an exact dataset pertaining to a specific LOD
-func FetchExact(xmlURL string, LOD int, wg *sync.WaitGroup, uiPbar *widget.ProgressBar) bool {
+func FetchExact(xmlURL string, LOD int, uiPbar *widget.ProgressBar) bool {
 
 	var misses []string
-	start := time.Now()
+	var wg sync.WaitGroup
 
 	checkURL(xmlURL)
 	data, err := http.Get(xmlURL)
@@ -261,7 +261,6 @@ func FetchExact(xmlURL string, LOD int, wg *sync.WaitGroup, uiPbar *widget.Progr
 	uiPbar.Max = float64(width)
 
 	for row := 0; row < int(height); row++ {
-		// Cli and UI progressbars both need ticking
 		bar.Add(1)
 
 		wg.Add(1)
@@ -292,10 +291,8 @@ func FetchExact(xmlURL string, LOD int, wg *sync.WaitGroup, uiPbar *widget.Progr
 
 		}(row)
 	}
-	wg.Wait() //NOTE: unsure whether to place this here, or one layer further down...
-
-	elapsed := time.Since(start)
-	log.Println("Time to download:", elapsed.Minutes(), "mins")
+	uiPbar.Refresh()
+	wg.Wait()
 
 	if len(misses) > 0 {
 		return false
