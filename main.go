@@ -85,6 +85,10 @@ func main() {
 	a := app.New()
 
 	var wg sync.WaitGroup
+	lod := binding.NewString()
+	ext := binding.NewString()
+	catalogID := binding.NewString()
+	catalogName := binding.NewString()
 
 	w := a.NewWindow("vestaluna")
 
@@ -107,15 +111,14 @@ func main() {
 	},
 		func(id widget.ListItemID, object fyne.CanvasObject) {
 			object.(*widget.Label).SetText(sc[id].Catalog)
+			catalogName.Set(sc[id].Catalog)
+			log.Println("catalogName: ", sc[id].Catalog)
+			log.Println("\tSC: ", sc[id])
 		})
 
 	contentText := widget.NewLabel("Select a catalog")
 
 	contentText.Wrapping = fyne.TextWrapWord
-
-	lod := binding.NewString()
-	ext := binding.NewString()
-	catalogID := binding.NewString()
 
 	listView.OnSelected = func(id widget.ListItemID) {
 		extension := strings.Replace(sc[id].Format, "image/", "", 1)
@@ -131,7 +134,8 @@ func main() {
 		_, _ = catalogID.Get()
 
 		// HERE: this is where we're breaking things..
-		var lodCurrent string = fmt.Sprintf("%d", (sc[id].LODs - 1)) // need to account for the UI non-zero-indexing
+		//var lodCurrent string = fmt.Sprintf("%d", (sc[id].LODs - 1)) // need to account for the UI non-zero-indexing
+		var lodCurrent string = fmt.Sprintf("%d", int(3)) // OVERRIDING BECAUSE TESTING...
 		lod.Set(lodCurrent)
 		_, _ = lod.Get()
 
@@ -184,11 +188,14 @@ func main() {
 
 			widget.NewButton("Concat", func() {
 				log.Println("Concatenating")
-				catalog, _ := catalogID.Get()
-				dirpath := filepath.Join("downloads", catalog)
+				catalogName, _ := catalogName.Get()
+				dirpath := filepath.Join("downloads", catalogName)
+				log.Println("DIRPATH:", dirpath)
+
 				ext, _ := ext.Get()
 				lodCurrent, _ := lod.Get()
 				lod, _ := strconv.Atoi(lodCurrent)
+
 				tools.ConcatWithPython(dirpath, lod, ext)
 				log.Println("Concatenation Complete")
 
