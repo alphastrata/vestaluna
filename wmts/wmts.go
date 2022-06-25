@@ -3,11 +3,9 @@ package wmts
 import (
 	"bufio"
 	"encoding/xml"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
-	"os/exec"
 	"path/filepath"
 	"sync"
 
@@ -231,8 +229,6 @@ func FetchExact(xmlURL string, LOD int, wg *sync.WaitGroup, uiPbar *widget.Progr
 
 	style := capabilities.Contents.Layer.Style.Identifier
 
-	// PROBLEM HERE...
-
 	matrixWidth := (capabilities.Contents.TileMatrixSet.TileMatrix[LOD].MatrixWidth)
 	matrixHeight := (capabilities.Contents.TileMatrixSet.TileMatrix[LOD].MatrixHeight)
 
@@ -260,10 +256,13 @@ func FetchExact(xmlURL string, LOD int, wg *sync.WaitGroup, uiPbar *widget.Progr
 	bar := progressbar.Default(progBarLimit)
 
 	log.Println("Total Tiles to fetch:", width*height)
+
+	uiPbar.Min = 0.0
+	uiPbar.Max = float64(width)
+
 	for row := 0; row < int(height); row++ {
 		// Cli and UI progressbars both need ticking
 		bar.Add(1)
-		uiPbar.SetValue(float64(row) + 1.0)
 
 		wg.Add(1)
 		go func(row int) {
@@ -271,7 +270,8 @@ func FetchExact(xmlURL string, LOD int, wg *sync.WaitGroup, uiPbar *widget.Progr
 			for col := 0; col < int(width); col++ {
 				// Cli and UI progressbars both need ticking
 				bar.Add(1)
-				uiPbar.SetValue(float64(row) + 1.0)
+				uiPbar.SetValue(1.0)
+				uiPbar.Refresh()
 
 				catalog := capabilities.Contents.Layer.Identifier
 				url := buildURL(url, style, tileMatrixSet, &LOD, row, col)
@@ -291,11 +291,12 @@ func FetchExact(xmlURL string, LOD int, wg *sync.WaitGroup, uiPbar *widget.Progr
 			}
 
 		}(row)
-		wg.Wait() //NOTE: unsure whether to place this here, or one layer further down...
 	}
+	wg.Wait() //NOTE: unsure whether to place this here, or one layer further down...
 
 	elapsed := time.Since(start)
 	log.Println("Time to download:", elapsed.Minutes(), "mins")
+
 	if len(misses) > 0 {
 		return false
 	} else {
@@ -304,17 +305,17 @@ func FetchExact(xmlURL string, LOD int, wg *sync.WaitGroup, uiPbar *widget.Progr
 
 }
 
-// keep files we missed for another time..
-func writeMisses(misses []string) {
-	f, err := os.Create("misses.txt")
-	checkError(err)
-	w := bufio.NewWriter(f)
-	for _, miss := range misses {
-		w.WriteString(miss + "\n")
-	}
-	w.Flush()
-	f.Close()
-}
+//// keep files we missed for another time..
+//func writeMisses(misses []string) {
+//	f, err := os.Create("misses.txt")
+//	checkError(err)
+//	w := bufio.NewWriter(f)
+//	for _, miss := range misses {
+//		w.WriteString(miss + "\n")
+//	}
+//	w.Flush()
+//	f.Close()
+//}
 
 // Download the image from the urls in misses.txt
 func FetchMisses() []string {
@@ -330,12 +331,4 @@ func FetchMisses() []string {
 	}
 	return urls
 
-}
-
-// DEBUG for some time now we've been having too-many-open files errors
-func countOpenFiles() int64 {
-	out, err := exec.Command("/bin/zsh", "-c", fmt.Sprintf("lsof -p %v", os.Getpid())).Output()
-	checkError(err)
-	lines := strings.Split(string(out), "\n")
-	return int64(len(lines) - 1)
 }

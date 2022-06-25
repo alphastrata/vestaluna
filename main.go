@@ -1,3 +1,14 @@
+//
+// VESTALUNA
+// a NASA database scraper and concatenation tool for equirectangular MASSIVELY detailed datasets.
+//
+
+//TODO: Vsplit this for description/preview window/buttons
+//TODO: The xml read from disk is broken >< stop using the GLOBAL!
+//TODO: create a create image button -> spawn available resolutions dialouge
+//TODO: buttons needs to include the LOD setting
+//TODO: add a depth button/slider to allow us to change the LOD at runtime
+//TODO: progressbars are nice in the cli-tool, how about bringing them into the UI?
 package main
 
 import (
@@ -86,7 +97,7 @@ func main() {
 
 	var wg sync.WaitGroup
 	lod := binding.NewString()
-	lodSliderMax := binding.NewInt()
+	lodSelect := binding.NewInt()
 	ext := binding.NewString()
 	catalogID := binding.NewString()
 	catalogName := binding.NewString()
@@ -132,8 +143,6 @@ func main() {
 		catalogID.Set(strconv.Itoa(id))
 		_, _ = catalogID.Get()
 
-		lodSliderMax.Set(sc[id].LODs) // To control the LOD slider later
-
 		//var lodCurrent string = fmt.Sprintf("%d", (sc[id].LODs - 1)) // need to account for the UI non-zero-indexing
 		var lodCurrent string = fmt.Sprintf("%d", int(3)) // OVERRIDING BECAUSE TESTING...
 		lod.Set(lodCurrent)
@@ -142,14 +151,19 @@ func main() {
 	}
 
 	pbar := widget.NewProgressBar()
+	combo := widget.NewSelect([]string{"LOD1", "LOD2", "LOD3"}, func(value string) {
+		parsedValue, err := strconv.Atoi(strings.ReplaceAll(value, "LOD", ""))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		lodSelect.Set(parsedValue)
+	})
+	combo.SetSelectedIndex(0)
 
 	split := container.NewHSplit(
 		listView,
 		container.NewVBox(
-			//TODO: Vsplit this for description/preview window/buttons
-			//TODO: create a create image button -> spawn available resolutions dialouge
-			//TODO: buttons needs to include the LOD setting
-			//TODO: add a depth button/slider to allow us to change the LOD at runtime
 
 			container.NewMax(contentText),
 			widget.NewButton("Download", func() {
@@ -168,16 +182,11 @@ func main() {
 				go func(wg *sync.WaitGroup, idx int, pbar *widget.ProgressBar) {
 					defer wg.Done()
 
-					lodCurrent, err := lod.Get()
+					lod, err := lodSelect.Get()
 					if err != nil {
 						log.Fatal("Error lod.Get()", err)
 					}
-					lod, err := strconv.Atoi(lodCurrent)
-					if err != nil {
-						log.Fatal("Error parsing lod into int -- maybe it received invalid data", err)
-					}
 
-					//log.Println("ERROR WAS HERE: ", sc[idx].XMLLocation)
 					if wmts.FetchExact(sc[idx].XMLLocation, lod, wg, pbar) {
 						log.Println("Download Complete")
 					} else {
@@ -192,25 +201,34 @@ func main() {
 				log.Println("Concatenating")
 				catalogName, _ := catalogName.Get()
 				dirpath := filepath.Join("downloads", catalogName)
-				log.Println("DIRPATH:", dirpath)
 
 				ext, _ := ext.Get()
-				lodCurrent, _ := lod.Get()
-				lod, _ := strconv.Atoi(lodCurrent)
+				lod, _ := lodSelect.Get()
 
 				tools.ConcatWithPython(dirpath, lod, ext)
 				log.Println("Concatenation Complete")
 
 			}),
 			widget.NewButton("Disk", func() {
+				catalogName, _ := catalogName.Get()
+				dirpath := filepath.Join("downloads", catalogName)
 				log.Println("Opening disk")
-				cmd := exec.Command("xdg-open", "downloads")
+				cmd := exec.Command("xdg-open", dirpath)
 				err := cmd.Run()
 				if err != nil {
 					log.Println(err)
 				}
 
 			}),
+			widget.NewButton("ConcatResults", func() {
+				cmd := exec.Command("xdg-open", "stitched_results")
+				err := cmd.Run()
+				if err != nil {
+					log.Println(err)
+				}
+
+			}),
+			combo,
 			pbar,
 		),
 	)
