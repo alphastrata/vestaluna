@@ -86,6 +86,7 @@ func main() {
 
 	var wg sync.WaitGroup
 	lod := binding.NewString()
+	lodSliderMax := binding.NewInt()
 	ext := binding.NewString()
 	catalogID := binding.NewString()
 	catalogName := binding.NewString()
@@ -112,8 +113,6 @@ func main() {
 		func(id widget.ListItemID, object fyne.CanvasObject) {
 			object.(*widget.Label).SetText(sc[id].Catalog)
 			catalogName.Set(sc[id].Catalog)
-			log.Println("catalogName: ", sc[id].Catalog)
-			log.Println("\tSC: ", sc[id])
 		})
 
 	contentText := widget.NewLabel("Select a catalog")
@@ -133,13 +132,16 @@ func main() {
 		catalogID.Set(strconv.Itoa(id))
 		_, _ = catalogID.Get()
 
-		// HERE: this is where we're breaking things..
+		lodSliderMax.Set(sc[id].LODs) // To control the LOD slider later
+
 		//var lodCurrent string = fmt.Sprintf("%d", (sc[id].LODs - 1)) // need to account for the UI non-zero-indexing
 		var lodCurrent string = fmt.Sprintf("%d", int(3)) // OVERRIDING BECAUSE TESTING...
 		lod.Set(lodCurrent)
 		_, _ = lod.Get()
 
 	}
+
+	pbar := widget.NewProgressBar()
 
 	split := container.NewHSplit(
 		listView,
@@ -163,7 +165,7 @@ func main() {
 				}
 
 				wg.Add(1)
-				go func(wg *sync.WaitGroup, idx int) {
+				go func(wg *sync.WaitGroup, idx int, pbar *widget.ProgressBar) {
 					defer wg.Done()
 
 					lodCurrent, err := lod.Get()
@@ -176,14 +178,14 @@ func main() {
 					}
 
 					//log.Println("ERROR WAS HERE: ", sc[idx].XMLLocation)
-					if wmts.FetchExact(sc[idx].XMLLocation, lod, wg) {
+					if wmts.FetchExact(sc[idx].XMLLocation, lod, wg, pbar) {
 						log.Println("Download Complete")
 					} else {
 						log.Println("Download was incomplete...")
-						wmts.FetchExact(sc[idx].XMLLocation, lod, wg)
+						wmts.FetchExact(sc[idx].XMLLocation, lod, wg, pbar)
 					}
 
-				}(&wg, catID)
+				}(&wg, catID, pbar)
 			}),
 
 			widget.NewButton("Concat", func() {
@@ -209,6 +211,7 @@ func main() {
 				}
 
 			}),
+			pbar,
 		),
 	)
 

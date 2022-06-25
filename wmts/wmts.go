@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"fyne.io/fyne/v2/widget"
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -213,7 +214,7 @@ func LoadCatalog(wmtsXML string) Capabilities {
 }
 
 // Fetch an exact dataset pertaining to a specific LOD
-func FetchExact(xmlURL string, LOD int, wg *sync.WaitGroup) bool {
+func FetchExact(xmlURL string, LOD int, wg *sync.WaitGroup, uiPbar *widget.ProgressBar) bool {
 
 	var misses []string
 	start := time.Now()
@@ -228,28 +229,15 @@ func FetchExact(xmlURL string, LOD int, wg *sync.WaitGroup) bool {
 	var capabilities Capabilities
 	xml.Unmarshal(body, &capabilities)
 
-	log.Println("Title:", capabilities.Contents.TileMatrixSet.Title)
-	log.Println("Catalog:", capabilities.Contents.Layer.Identifier)
-	log.Println("Format:", capabilities.Contents.Layer.Format)
-	log.Println("TileMatrixSetID:", capabilities.Contents.Layer.TileMatrixSetLink.TileMatrixSet)
-
 	style := capabilities.Contents.Layer.Style.Identifier
-	log.Println("Style:", capabilities.Contents.Layer.Style.Identifier)
 
 	// PROBLEM HERE...
-	log.Println("PROBLEMS: ", capabilities.Contents.TileMatrixSet.TileMatrix[LOD].MatrixWidth)
-	log.Println("PROBLEMS: ", capabilities.Contents.TileMatrixSet.TileMatrix[LOD].MatrixHeight)
 
 	matrixWidth := (capabilities.Contents.TileMatrixSet.TileMatrix[LOD].MatrixWidth)
 	matrixHeight := (capabilities.Contents.TileMatrixSet.TileMatrix[LOD].MatrixHeight)
-	log.Println("WMTS matrixWidth :", matrixWidth)
-	log.Println("WMTS matrixHeight:", matrixHeight)
 
 	tileMatrixSet := capabilities.Contents.TileMatrixSet.Identifier
-	log.Println("TileMatrixSet:", capabilities.Contents.TileMatrixSet.Identifier)
-
 	url := capabilities.Contents.Layer.ResourceURL.Template
-	log.Println("URL: ", url)
 
 	height, err := strconv.ParseFloat(matrixHeight, 64)
 	checkError(err)
@@ -257,17 +245,34 @@ func FetchExact(xmlURL string, LOD int, wg *sync.WaitGroup) bool {
 	width, err := strconv.ParseFloat(matrixWidth, 64)
 	checkError(err)
 
+	// ------ DEBUG -----
+	//log.Println("Title:", capabilities.Contents.TileMatrixSet.Title)
+	//log.Println("Catalog:", capabilities.Contents.Layer.Identifier)
+	//log.Println("Format:", capabilities.Contents.Layer.Format)
+	//log.Println("TileMatrixSetID:", capabilities.Contents.Layer.TileMatrixSetLink.TileMatrixSet)
+	//log.Println("Style:", capabilities.Contents.Layer.Style.Identifier)
+	//log.Println("WMTS matrixWidth :", matrixWidth)
+	//log.Println("WMTS matrixHeight:", matrixHeight)
+	//log.Println("TileMatrixSet:", capabilities.Contents.TileMatrixSet.Identifier)
+	//log.Println("URL: ", url)
+
 	var progBarLimit int64 = int64(width * height)
 	bar := progressbar.Default(progBarLimit)
 
 	log.Println("Total Tiles to fetch:", width*height)
 	for row := 0; row < int(height); row++ {
+		// Cli and UI progressbars both need ticking
 		bar.Add(1)
+		uiPbar.SetValue(float64(row) + 1.0)
 
 		wg.Add(1)
 		go func(row int) {
+			defer wg.Done()
 			for col := 0; col < int(width); col++ {
+				// Cli and UI progressbars both need ticking
 				bar.Add(1)
+				uiPbar.SetValue(float64(row) + 1.0)
+
 				catalog := capabilities.Contents.Layer.Identifier
 				url := buildURL(url, style, tileMatrixSet, &LOD, row, col)
 				filename := makeFilenameFromURL(url, catalog)
@@ -286,9 +291,8 @@ func FetchExact(xmlURL string, LOD int, wg *sync.WaitGroup) bool {
 			}
 
 		}(row)
-		wg.Done()
+		wg.Wait() //NOTE: unsure whether to place this here, or one layer further down...
 	}
-	wg.Wait() //NOTE: redundant?
 
 	elapsed := time.Since(start)
 	log.Println("Time to download:", elapsed.Minutes(), "mins")
