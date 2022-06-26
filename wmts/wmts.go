@@ -79,13 +79,13 @@ func checkURL(url string) bool {
 func downloadURL(url, filename string) {
 	resp, err := http.Get(url)
 	checkError(err)
-	defer resp.Body.Close()
 
 	f, err := os.Create(filename)
 	checkError(err)
-	defer f.Close()
 
 	io.Copy(f, resp.Body)
+	resp.Body.Close()
+	f.Close()
 
 }
 
@@ -256,12 +256,14 @@ func FetchExact(xmlURL string, LOD int, uiPbar *widget.ProgressBar) bool {
 	uiPbar.Min = 0.0
 	uiPbar.Max = float64(width * height)
 
-	for row := 0; row < int(height); row++ {
-		bar.Add(1)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for row := 0; row < int(height); row++ {
+			bar.Add(1)
 
-		wg.Add(1)
-		go func(row int) {
-			defer wg.Done()
+			//wg.Add(1)
+			//go func(row int) {
 			for col := 0; col < int(width); col++ {
 				// Cli and UI progressbars both need ticking
 				bar.Add(1)
@@ -284,12 +286,12 @@ func FetchExact(xmlURL string, LOD int, uiPbar *widget.ProgressBar) bool {
 					log.Print("File already exists:", filename)
 				}
 			}
-
-		}(row)
+			//}(row)
+		}
 		uiPbar.Refresh()
-	}
-	uiPbar.SetValue(width * height)
+	}()
 	wg.Wait()
+	uiPbar.SetValue(width * height)
 
 	if len(misses) > 0 {
 		return false
