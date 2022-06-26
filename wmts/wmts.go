@@ -14,7 +14,6 @@ import (
 	"strconv"
 	"strings"
 
-	"fyne.io/fyne/v2/widget"
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -208,7 +207,7 @@ func LoadCatalog(wmtsXML string) Capabilities {
 }
 
 // Fetch an exact dataset pertaining to a specific LOD
-func FetchExact(xmlURL string, LOD int, uiPbar *widget.ProgressBar) bool {
+func FetchExact(xmlURL string, LOD int) bool {
 
 	var misses []string
 	var wg sync.WaitGroup
@@ -237,38 +236,20 @@ func FetchExact(xmlURL string, LOD int, uiPbar *widget.ProgressBar) bool {
 	width, err := strconv.ParseFloat(matrixWidth, 64)
 	checkError(err)
 
-	// ------ DEBUG -----
-	//log.Println("Title:", capabilities.Contents.TileMatrixSet.Title)
-	//log.Println("Catalog:", capabilities.Contents.Layer.Identifier)
-	//log.Println("Format:", capabilities.Contents.Layer.Format)
-	//log.Println("TileMatrixSetID:", capabilities.Contents.Layer.TileMatrixSetLink.TileMatrixSet)
-	//log.Println("Style:", capabilities.Contents.Layer.Style.Identifier)
-	//log.Println("WMTS matrixWidth :", matrixWidth)
-	//log.Println("WMTS matrixHeight:", matrixHeight)
-	//log.Println("TileMatrixSet:", capabilities.Contents.TileMatrixSet.Identifier)
-	//log.Println("URL: ", url)
-
 	var progBarLimit int64 = int64(width * height)
 	bar := progressbar.Default(progBarLimit)
 
 	log.Println("Total Tiles to fetch:", width*height)
 
-	uiPbar.Min = 0.0
-	uiPbar.Max = float64(width * height)
+	for row := 0; row < int(height); row++ {
+		bar.Add(1)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for row := 0; row < int(height); row++ {
-			bar.Add(1)
-
-			//wg.Add(1)
-			//go func(row int) {
+		wg.Add(1)
+		go func(row int) {
+			defer wg.Done()
 			for col := 0; col < int(width); col++ {
 				// Cli and UI progressbars both need ticking
 				bar.Add(1)
-				uiPbar.SetValue(1.0)
-				uiPbar.Refresh()
 
 				catalog := capabilities.Contents.Layer.Identifier
 				url := buildURL(url, style, tileMatrixSet, &LOD, row, col)
@@ -286,32 +267,16 @@ func FetchExact(xmlURL string, LOD int, uiPbar *widget.ProgressBar) bool {
 					log.Print("File already exists:", filename)
 				}
 			}
-			//}(row)
-		}
-		uiPbar.Refresh()
-	}()
+		}(row)
+	}
 	wg.Wait()
-	uiPbar.SetValue(width * height)
 
 	if len(misses) > 0 {
 		return false
-	} else {
-		return true
 	}
+	return true
 
 }
-
-//// keep files we missed for another time..
-//func writeMisses(misses []string) {
-//	f, err := os.Create("misses.txt")
-//	checkError(err)
-//	w := bufio.NewWriter(f)
-//	for _, miss := range misses {
-//		w.WriteString(miss + "\n")
-//	}
-//	w.Flush()
-//	f.Close()
-//}
 
 // Download the image from the urls in misses.txt
 func FetchMisses() []string {
@@ -328,3 +293,26 @@ func FetchMisses() []string {
 	return urls
 
 }
+
+// ------ DEBUG -----
+//log.Println("Title:", capabilities.Contents.TileMatrixSet.Title)
+//log.Println("Catalog:", capabilities.Contents.Layer.Identifier)
+//log.Println("Format:", capabilities.Contents.Layer.Format)
+//log.Println("TileMatrixSetID:", capabilities.Contents.Layer.TileMatrixSetLink.TileMatrixSet)
+//log.Println("Style:", capabilities.Contents.Layer.Style.Identifier)
+//log.Println("WMTS matrixWidth :", matrixWidth)
+//log.Println("WMTS matrixHeight:", matrixHeight)
+//log.Println("TileMatrixSet:", capabilities.Contents.TileMatrixSet.Identifier)
+//log.Println("URL: ", url)
+
+// keep files we missed for another time..
+//func writeMisses(misses []string) {
+//	f, err := os.Create("misses.txt")
+//	checkError(err)
+//	w := bufio.NewWriter(f)
+//	for _, miss := range misses {
+//		w.WriteString(miss + "\n")
+//	}
+//	w.Flush()
+//	f.Close()
+//}

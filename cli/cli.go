@@ -2,24 +2,28 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
+	"strings"
 	"vestaluna/tools"
 	"vestaluna/wmts"
+
+	"fyne.io/fyne/v2/widget"
 )
 
 type Args struct {
-	mode  string //concat or fetch
-	depth string //LOD to scrape until, or concat at
-	dir   string //directory to store files in
+	mode string //concat or fetch
+	lod  string //LOD to scrape until, or concat at
+	dir  string //directory to store files in
 }
 
 func parseArgs() Args {
 	args := os.Args
 	if len(args) == 1 {
-		fmt.Println("Usage: ./main.go <mode> <depth> <dir>")
+		fmt.Println("Usage: ./main.go <mode> <lod> <dir>")
 		fmt.Println("mode: fetch or concat")
-		fmt.Println("depth: LOD to scrape until, or concat at")
+		fmt.Println("lod: LOD to scrape until, or concat at")
 		fmt.Println("dir: directory to store files in")
 		fmt.Println("Databases I have information for:")
 		for _, xml := range XML {
@@ -38,13 +42,13 @@ func parseArgs() Args {
 
 	if args[1] == "fetch" {
 		return Args{mode: args[1],
-			depth: args[2],
-			dir:   ""} //N/A
+			lod: args[2],
+			dir: ""} //N/A
 	}
 
 	return Args{mode: args[1],
-		depth: args[2],
-		dir:   args[3]} // Location of dataset from which to concat
+		lod: args[2],
+		dir: args[3]} // Location of dataset from which to concat
 }
 
 var XML = []string{"https://trek.nasa.gov/tiles/Moon/EQ/LRO_LOLA_Shade_Global_128ppd_v04/1.0.0/WMTSCapabilities.xml",
@@ -62,10 +66,14 @@ func main() {
 	case "fetch":
 		// remove the misses.txt
 		os.Remove("misses.txt")
-		//wmts.Fetch(wmtsXML, args.depth)
-		depth, _ := strconv.Atoi(args.depth)
-		wmts.FetchExact(wmtsXML, depth)
+		uiPbar := widget.NewProgressBar() //NOTE: Never used just passing as a dummy, may need to address later..
+		lod, _ := strconv.Atoi(args.lod)
+		wmts.FetchExact(wmtsXML, lod, uiPbar)
 	case "concat":
-		tools.RunConcatenations(args.depth, args.dir)
+		sp := strings.Split(wmtsXML, "/")
+		dirpath := "downloads/" + sp[len(sp)-2]
+		log.Println("CLI>>> Dirpath is:", dirpath)
+		lod, _ := strconv.Atoi(args.lod)
+		tools.ConcatWithPython(dirpath, lod)
 	}
 }

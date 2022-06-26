@@ -135,9 +135,8 @@ func main() {
 	listView.OnSelected = func(id widget.ListItemID) {
 		extension := strings.Replace(sc[id].Format, "image/", "", 1)
 
-		txt := fmt.Sprintf("Catalog:%s\nLODs:%d\nFormat:%s",
-			sc[id].Catalog, sc[id].LODs, extension)
-		contentText.Text = txt
+		//TODO: Fix this, the select a catalog text is, for some reason never being updated...
+		contentText.Text = fmt.Sprintf("Catalog:%s\nLODs:%d\nFormat:%s", sc[id].Catalog, sc[id].LODs, extension)
 
 		ext.Set(extension)
 		catalogID.Set(strconv.Itoa(id))
