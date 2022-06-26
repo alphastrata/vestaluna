@@ -93,6 +93,18 @@ func pullSimpleCatalogData(XML []string) []simpleCatalog {
 	return catalogEntries
 }
 
+// Updates UI progress bar's value by `v`
+func updatePB(pb *widget.ProgressBar, catalogID string, lod int, pbMax float64) {
+	// get v by counting the files relative to the download query on a sep thread..
+	for {
+		v := float64(0.0) //NOTE: needs to work out its value by counting the files downloaded
+		if v >= pbMax {
+			return
+		}
+		pb.SetValue(v)
+
+	}
+}
 func main() {
 
 	a := app.New()
@@ -105,8 +117,7 @@ func main() {
 	catalogName := binding.NewString()
 
 	w := a.NewWindow("vestaluna")
-
-	w.Resize(fyne.NewSize(640, 360))
+	w.Resize(fyne.NewSize(960, 420))
 
 	xmlList := &XML
 
@@ -128,24 +139,26 @@ func main() {
 			catalogName.Set(sc[id].Catalog)
 		})
 
-	contentText := widget.NewLabel("Select a catalog")
+	ctTextBind := binding.NewString()
+	ctTextBind.Set("Select a catalog")
+	contentText := widget.NewLabelWithData(ctTextBind)
 
 	contentText.Wrapping = fyne.TextWrapWord
 
 	listView.OnSelected = func(id widget.ListItemID) {
 		extension := strings.Replace(sc[id].Format, "image/", "", 1)
 
-		//TODO: Fix this, the select a catalog text is, for some reason never being updated...
-		contentText.Text = fmt.Sprintf("Catalog:%s\nLODs:%d\nFormat:%s", sc[id].Catalog, sc[id].LODs, extension)
+		ctTextBind.Set(fmt.Sprintf("Catalog:%s\nLODs:%d\nFormat:%s", sc[id].Catalog, sc[id].LODs, extension))
 
 		ext.Set(extension)
 		catalogID.Set(strconv.Itoa(id))
-
 		lod.Set(sc[id].LODs)
 
 	}
 
-	pbar := widget.NewProgressBar()
+	pbar := widget.NewProgressBarInfinite()
+	pbar.Hide()
+
 	combo := widget.NewSelect([]string{"LOD1", "LOD2", "LOD3", "LOD4", "LOD5", "LOD6"}, func(value string) {
 		parsedValue, err := strconv.Atoi(strings.ReplaceAll(value, "LOD", ""))
 		if err != nil {
@@ -181,27 +194,29 @@ func main() {
 					log.Fatal("Error parsing catIDCurrent into int -- maybe it received invalid data", err)
 				}
 
+				lod, err := lodSelect.Get()
+				if err != nil {
+					log.Fatal("Error lod.Get()", err)
+				}
 				wg.Add(1)
-				go func(wg *sync.WaitGroup, idx int, pbar *widget.ProgressBar) {
+				pbar.Show()
+				go func(wg *sync.WaitGroup, idx int, lod int) {
 					defer wg.Done()
 
-					lod, err := lodSelect.Get()
-					if err != nil {
-						log.Fatal("Error lod.Get()", err)
-					}
-
-					if wmts.FetchExact(sc[idx].XMLLocation, lod, pbar) {
+					if wmts.FetchExact(sc[idx].XMLLocation, lod) {
 						log.Println("Download Complete")
+						pbar.Hide()
 					} else {
 						log.Println("Download was incomplete...")
-						wmts.FetchExact(sc[idx].XMLLocation, lod, pbar)
+						wmts.FetchExact(sc[idx].XMLLocation, lod)
 					}
 
-				}(&wg, catID, pbar)
+				}(&wg, catID, lod)
 			}),
 
 			widget.NewButton("Concat", func() {
 				log.Println("Concatenating")
+				pbar.Show()
 				catID, _ := catalogID.Get()
 				idx, _ := strconv.Atoi(catID)
 				dirpath := filepath.Join("downloads", sc[idx].Catalog)
@@ -210,6 +225,7 @@ func main() {
 
 				tools.ConcatWithPython(dirpath, lod)
 				log.Println("Concatenation Complete")
+				pbar.Hide()
 
 			}),
 			widget.NewButton("Tiles", func() {
@@ -227,6 +243,7 @@ func main() {
 			}),
 			widget.NewButton("ConcatResults", func() {
 				catID, _ := catalogID.Get()
+
 				lod, _ := lodSelect.Get()
 				idx, _ := strconv.Atoi(catID)
 				result := strconv.Itoa(lod) + "_" + sc[idx].Catalog + ".jpg"
