@@ -12,9 +12,7 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -33,38 +31,6 @@ import (
 
 	"fyne.io/fyne/v2/widget"
 )
-
-var XML = []string{"https://trek.nasa.gov/tiles/Moon/EQ/LRO_LOLA_Shade_Global_128ppd_v04/1.0.0/WMTSCapabilities.xml",
-	"https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/WMTSCapabilities.xml",
-	"https://trek.nasa.gov/tiles/Moon/EQ/LRO_LOLA_Shade_Global_256ppd_v06/1.0.0/WMTSCapabilities.xml",
-	"https://trek.nasa.gov/tiles/Moon/EQ/LRO_LOLA_ClrRoughness_Global_16ppd/1.0.0/WMTSCapabilities.xml",
-	"https://trek.nasa.gov/tiles/Mercury/NP/Mercury_MESSENGER_mosaic_npole_250m_2013/1.0.0/WMTSCapabilities.xml",
-	"https://trek.nasa.gov/tiles/Titan/EQ/Titan_global_32ppd_ColorRatio_v2/1.0.0/WMTSCapabilities.xml",
-	"https://trek.nasa.gov/tiles/Mars/EQ/Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw/1.0.0/WMTSCapabilities.xml"}
-
-// xml file locations are stored in this dir in the apiEndPoints.txt file
-func readApiEndpoints(filepath string) ([]string, error) {
-	file, err := os.Open(filepath)
-
-	if err != nil {
-		log.Println(err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanLines)
-	var xml []string
-	for scanner.Scan() {
-		xml = append(xml, scanner.Text())
-		//	log.Println(xml)
-
-	}
-
-	return xml, nil
-
-}
-
-// Read in the .xml files to hit and populate the UI
 
 type simpleCatalog struct {
 	Catalog     string
@@ -110,7 +76,7 @@ func main() {
 	a := app.New()
 
 	var wg sync.WaitGroup
-	lod := binding.NewInt()
+	//catIDX := binding.NewInt()
 	lodSelect := binding.NewInt()
 	ext := binding.NewString()
 	catalogID := binding.NewString()
@@ -119,13 +85,9 @@ func main() {
 	w := a.NewWindow("vestaluna")
 	w.Resize(fyne.NewSize(960, 420))
 
-	xmlList := &XML
+	xmlList, _ := tools.ReadApiEndpoints("apiEndPoints.txt")
 
-	sc := pullSimpleCatalogData(*xmlList)
-	log.Println("LEN:", len(sc))
-	for _, xml := range *xmlList {
-		log.Println(xml)
-	}
+	sc := pullSimpleCatalogData(xmlList)
 
 	listView := widget.NewList(func() int {
 		return len(sc)
@@ -152,26 +114,25 @@ func main() {
 
 		ext.Set(extension)
 		catalogID.Set(strconv.Itoa(id))
-		lod.Set(sc[id].LODs)
+		lodSelect.Set(sc[id].LODs)
 
 	}
 
 	pbar := widget.NewProgressBarInfinite()
 	pbar.Hide()
 
-	combo := widget.NewSelect([]string{"LOD1", "LOD2", "LOD3", "LOD4", "LOD5", "LOD6"}, func(value string) {
+	combo := widget.NewSelect([]string{"LOD1", "LOD2", "LOD3", "LOD4", "LOD5", "LOD6", "LOD7", "LOD8"}, func(value string) {
 		parsedValue, err := strconv.Atoi(strings.ReplaceAll(value, "LOD", ""))
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		maxLOD, _ := lod.Get()
+		maxLOD, _ := lodSelect.Get()
 		if parsedValue > maxLOD {
 			lodSelect.Set(parsedValue)
 
 		}
-
-		lodSelect.Set(parsedValue)
+		lodSelect.Set(maxLOD)
 	})
 	combo.SetSelectedIndex(0)
 
@@ -182,7 +143,6 @@ func main() {
 
 			container.NewMax(contentText),
 			widget.NewButton("Download", func() {
-				log.Println("Downloading...")
 				//TODO: how to get the right index down here after it's set up there..
 				catIDCurrent, err := catalogID.Get()
 				if err != nil {
@@ -198,11 +158,13 @@ func main() {
 				if err != nil {
 					log.Fatal("Error lod.Get()", err)
 				}
-				wg.Add(1)
 				pbar.Show()
+
+				wg.Add(1)
 				go func(wg *sync.WaitGroup, idx int, lod int) {
 					defer wg.Done()
 
+					log.Println("Downloading...")
 					if wmts.FetchExact(sc[idx].XMLLocation, lod) {
 						log.Println("Download Complete")
 						pbar.Hide()
@@ -212,6 +174,7 @@ func main() {
 					}
 
 				}(&wg, catID, lod)
+				wg.Wait()
 			}),
 
 			widget.NewButton("Concat", func() {
