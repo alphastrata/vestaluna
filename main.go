@@ -32,48 +32,13 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-type simpleCatalog struct {
-	Catalog     string
-	XMLLocation string
-	Format      string
-	LODs        int
-	URL         string
-}
-
-// pull a simplified version of the catalog data for gui display
-func pullSimpleCatalogData(XML []string) []simpleCatalog {
-	var catalogEntries []simpleCatalog
-	for _, xml := range XML {
-		entry := wmts.LoadCatalog(xml)
-
-		sc := simpleCatalog{
-			Catalog:     entry.Contents.Layer.Identifier,
-			XMLLocation: xml,
-			Format:      entry.Contents.Layer.Format,
-			LODs:        len(entry.Contents.TileMatrixSet.TileMatrix),
-			URL:         entry.Contents.Layer.ResourceURL.Template,
-		}
-		catalogEntries = append(catalogEntries, sc)
-	}
-
-	return catalogEntries
-}
-
-// Updates UI progress bar's value by `v`
-func updatePB(pb *widget.ProgressBar, catalogID string, lod int, pbMax float64) {
-	// get v by counting the files relative to the download query on a sep thread..
-	for {
-		v := float64(0.0) //NOTE: needs to work out its value by counting the files downloaded
-		if v >= pbMax {
-			return
-		}
-		pb.SetValue(v)
-
-	}
-}
 func main() {
 
 	var wg sync.WaitGroup
+
+	// Pull and serve (simfle) data for the UI
+	xmlList, _ := tools.ReadApiEndpoints("apiEndPoints.txt")
+	sc := wmts.PullSimpleCatalogData(xmlList)
 
 	// UI bindings (fancy fyne mutex globals)
 	lodSelect := binding.NewInt()
@@ -85,10 +50,6 @@ func main() {
 	a := app.New()
 	w := a.NewWindow("vestaluna")
 	w.Resize(fyne.NewSize(960, 420))
-
-	// Pull and serve (simfle) data for the UI
-	xmlList, _ := tools.ReadApiEndpoints("apiEndPoints.txt")
-	sc := pullSimpleCatalogData(xmlList)
 
 	listView := widget.NewList(func() int {
 		return len(sc)
@@ -130,10 +91,10 @@ func main() {
 
 		maxLOD, _ := lodSelect.Get()
 		if parsedValue > maxLOD {
-			lodSelect.Set(parsedValue)
+			lodSelect.Set(maxLOD)
 
 		}
-		lodSelect.Set(maxLOD)
+		lodSelect.Set(parsedValue)
 	})
 	combo.SetSelectedIndex(0)
 

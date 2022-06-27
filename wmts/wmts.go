@@ -192,7 +192,7 @@ type Capabilities struct {
 }
 
 // Loads a catalog from wmtsXML
-func LoadCatalog(wmtsXML string) Capabilities {
+func loadCatalog(wmtsXML string) Capabilities {
 
 	checkURL(wmtsXML)
 	data, err := http.Get(strings.TrimSpace(wmtsXML))
@@ -292,6 +292,33 @@ func FetchMisses() []string {
 	}
 	return urls
 
+}
+
+type SimpleCatalog struct {
+	Catalog     string
+	XMLLocation string
+	Format      string
+	LODs        int
+	URL         string
+}
+
+// pull a simplified version of the catalog data for gui display
+func PullSimpleCatalogData(XML []string) []SimpleCatalog {
+	var catalogEntries []SimpleCatalog
+	for _, xml := range XML {
+		entry := loadCatalog(xml)
+
+		sc := SimpleCatalog{
+			Catalog:     entry.Contents.Layer.Identifier,
+			XMLLocation: xml,
+			Format:      entry.Contents.Layer.Format,
+			LODs:        len(entry.Contents.TileMatrixSet.TileMatrix),
+			URL:         entry.Contents.Layer.ResourceURL.Template,
+		}
+		catalogEntries = append(catalogEntries, sc)
+	}
+
+	return catalogEntries
 }
 
 //
