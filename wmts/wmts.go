@@ -193,7 +193,7 @@ type Capabilities struct {
 func LoadCatalog(wmtsXML string) Capabilities {
 
 	checkURL(wmtsXML)
-	data, err := http.Get(wmtsXML)
+	data, err := http.Get(strings.TrimSpace(wmtsXML))
 	checkError(err)
 
 	body, err := ioutil.ReadAll(data.Body)

@@ -12,9 +12,7 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -33,38 +31,6 @@ import (
 
 	"fyne.io/fyne/v2/widget"
 )
-
-var XML = []string{"https://trek.nasa.gov/tiles/Moon/EQ/LRO_LOLA_Shade_Global_128ppd_v04/1.0.0/WMTSCapabilities.xml",
-	"https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/WMTSCapabilities.xml",
-	"https://trek.nasa.gov/tiles/Moon/EQ/LRO_LOLA_Shade_Global_256ppd_v06/1.0.0/WMTSCapabilities.xml",
-	"https://trek.nasa.gov/tiles/Moon/EQ/LRO_LOLA_ClrRoughness_Global_16ppd/1.0.0/WMTSCapabilities.xml",
-	"https://trek.nasa.gov/tiles/Mercury/NP/Mercury_MESSENGER_mosaic_npole_250m_2013/1.0.0/WMTSCapabilities.xml",
-	"https://trek.nasa.gov/tiles/Titan/EQ/Titan_global_32ppd_ColorRatio_v2/1.0.0/WMTSCapabilities.xml",
-	"https://trek.nasa.gov/tiles/Mars/EQ/Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw/1.0.0/WMTSCapabilities.xml"}
-
-// xml file locations are stored in this dir in the apiEndPoints.txt file
-func readApiEndpoints(filepath string) ([]string, error) {
-	file, err := os.Open(filepath)
-
-	if err != nil {
-		log.Println(err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanLines)
-	var xml []string
-	for scanner.Scan() {
-		xml = append(xml, scanner.Text())
-		//	log.Println(xml)
-
-	}
-
-	return xml, nil
-
-}
-
-// Read in the .xml files to hit and populate the UI
 
 type simpleCatalog struct {
 	Catalog     string
@@ -119,11 +85,11 @@ func main() {
 	w := a.NewWindow("vestaluna")
 	w.Resize(fyne.NewSize(960, 420))
 
-	xmlList := &XML
+	xmlList, _ := tools.ReadApiEndpoints("apiEndPoints.txt")
 
-	sc := pullSimpleCatalogData(*xmlList)
+	sc := pullSimpleCatalogData(xmlList)
 	log.Println("LEN:", len(sc))
-	for _, xml := range *xmlList {
+	for _, xml := range xmlList {
 		log.Println(xml)
 	}
 
@@ -198,8 +164,9 @@ func main() {
 				if err != nil {
 					log.Fatal("Error lod.Get()", err)
 				}
-				wg.Add(1)
 				pbar.Show()
+
+				wg.Add(1)
 				go func(wg *sync.WaitGroup, idx int, lod int) {
 					defer wg.Done()
 
@@ -265,6 +232,5 @@ func main() {
 	w.SetContent(split)
 
 	w.ShowAndRun()
-	wg.Wait()
 
 }

@@ -4,10 +4,7 @@ go 1.17
 
 require (
 	fyne.io/fyne/v2 v2.2.1
-	github.com/inancgumus/screen v0.0.0-20190314163918-06e984b86ed3
-	github.com/schollz/progressbar v1.0.0
 	github.com/schollz/progressbar/v3 v3.8.6
-	gocv.io/x/gocv v0.30.0
 )
 
 require (
