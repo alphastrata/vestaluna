@@ -27,6 +27,8 @@ func checkError(err error) {
 
 // Build a valid url from the parameters set out in the .xml spec
 func buildURL(url string, style string, tileMatrixSet string, zoom *int, row int, col int) string {
+
+	url = strings.TrimSpace(url)
 	url = strings.Replace(url, "/{Style}", style, -1) // There is always a duplicate / in this one :(
 	url = strings.Replace(url, "{TileMatrixSet}", tileMatrixSet, -1)
 	url = strings.Replace(url, "{TileMatrix}", strconv.Itoa(*zoom), -1)
@@ -208,12 +210,12 @@ func LoadCatalog(wmtsXML string) Capabilities {
 
 // Fetch an exact dataset pertaining to a specific LOD
 func FetchExact(xmlURL string, LOD int) bool {
-
+	LOD = LOD - 1 // Comes in from a 1th index not a 0th from the UI
 	var misses []string
 	var wg sync.WaitGroup
 
 	checkURL(xmlURL)
-	data, err := http.Get(xmlURL)
+	data, err := http.Get(strings.TrimSpace(xmlURL))
 	checkError(err)
 
 	body, err := ioutil.ReadAll(data.Body)
@@ -229,7 +231,6 @@ func FetchExact(xmlURL string, LOD int) bool {
 
 	tileMatrixSet := capabilities.Contents.TileMatrixSet.Identifier
 	url := capabilities.Contents.Layer.ResourceURL.Template
-
 	height, err := strconv.ParseFloat(matrixHeight, 64)
 	checkError(err)
 
@@ -238,7 +239,6 @@ func FetchExact(xmlURL string, LOD int) bool {
 
 	var progBarLimit int64 = int64(width * height)
 	bar := progressbar.Default(progBarLimit)
-
 	log.Println("Total Tiles to fetch:", width*height)
 
 	for row := 0; row < int(height); row++ {
@@ -294,16 +294,16 @@ func FetchMisses() []string {
 
 }
 
-// ------ DEBUG -----
-//log.Println("Title:", capabilities.Contents.TileMatrixSet.Title)
-//log.Println("Catalog:", capabilities.Contents.Layer.Identifier)
-//log.Println("Format:", capabilities.Contents.Layer.Format)
-//log.Println("TileMatrixSetID:", capabilities.Contents.Layer.TileMatrixSetLink.TileMatrixSet)
-//log.Println("Style:", capabilities.Contents.Layer.Style.Identifier)
-//log.Println("WMTS matrixWidth :", matrixWidth)
-//log.Println("WMTS matrixHeight:", matrixHeight)
-//log.Println("TileMatrixSet:", capabilities.Contents.TileMatrixSet.Identifier)
-//log.Println("URL: ", url)
+//
+//	log.Println("Title:", capabilities.Contents.TileMatrixSet.Title)
+//	log.Println("Catalog:", capabilities.Contents.Layer.Identifier)
+//	log.Println("Format:", capabilities.Contents.Layer.Format)
+//	log.Println("Style:", capabilities.Contents.Layer.Style.Identifier)
+//	log.Println("TileMatrixSet:", capabilities.Contents.TileMatrixSet.Identifier)
+//	log.Println("WMTS matrixWidth :", matrixWidth)
+//	log.Println("WMTS matrixHeight:", matrixHeight)
+//	log.Println("TileMatrixSetID:", capabilities.Contents.Layer.TileMatrixSetLink.TileMatrixSet)
+//	log.Println("URL: ", url)
 
 // keep files we missed for another time..
 //func writeMisses(misses []string) {

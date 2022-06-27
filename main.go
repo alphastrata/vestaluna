@@ -76,7 +76,7 @@ func main() {
 	a := app.New()
 
 	var wg sync.WaitGroup
-	lod := binding.NewInt()
+	//catIDX := binding.NewInt()
 	lodSelect := binding.NewInt()
 	ext := binding.NewString()
 	catalogID := binding.NewString()
@@ -88,10 +88,6 @@ func main() {
 	xmlList, _ := tools.ReadApiEndpoints("apiEndPoints.txt")
 
 	sc := pullSimpleCatalogData(xmlList)
-	log.Println("LEN:", len(sc))
-	for _, xml := range xmlList {
-		log.Println(xml)
-	}
 
 	listView := widget.NewList(func() int {
 		return len(sc)
@@ -118,26 +114,25 @@ func main() {
 
 		ext.Set(extension)
 		catalogID.Set(strconv.Itoa(id))
-		lod.Set(sc[id].LODs)
+		lodSelect.Set(sc[id].LODs)
 
 	}
 
 	pbar := widget.NewProgressBarInfinite()
 	pbar.Hide()
 
-	combo := widget.NewSelect([]string{"LOD1", "LOD2", "LOD3", "LOD4", "LOD5", "LOD6"}, func(value string) {
+	combo := widget.NewSelect([]string{"LOD1", "LOD2", "LOD3", "LOD4", "LOD5", "LOD6", "LOD7", "LOD8"}, func(value string) {
 		parsedValue, err := strconv.Atoi(strings.ReplaceAll(value, "LOD", ""))
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		maxLOD, _ := lod.Get()
+		maxLOD, _ := lodSelect.Get()
 		if parsedValue > maxLOD {
 			lodSelect.Set(parsedValue)
 
 		}
-
-		lodSelect.Set(parsedValue)
+		lodSelect.Set(maxLOD)
 	})
 	combo.SetSelectedIndex(0)
 
@@ -148,7 +143,6 @@ func main() {
 
 			container.NewMax(contentText),
 			widget.NewButton("Download", func() {
-				log.Println("Downloading...")
 				//TODO: how to get the right index down here after it's set up there..
 				catIDCurrent, err := catalogID.Get()
 				if err != nil {
@@ -170,6 +164,7 @@ func main() {
 				go func(wg *sync.WaitGroup, idx int, lod int) {
 					defer wg.Done()
 
+					log.Println("Downloading...")
 					if wmts.FetchExact(sc[idx].XMLLocation, lod) {
 						log.Println("Download Complete")
 						pbar.Hide()
@@ -179,6 +174,7 @@ func main() {
 					}
 
 				}(&wg, catID, lod)
+				wg.Wait()
 			}),
 
 			widget.NewButton("Concat", func() {
@@ -232,5 +228,6 @@ func main() {
 	w.SetContent(split)
 
 	w.ShowAndRun()
+	wg.Wait()
 
 }
