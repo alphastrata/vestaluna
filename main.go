@@ -73,20 +73,21 @@ func updatePB(pb *widget.ProgressBar, catalogID string, lod int, pbMax float64) 
 }
 func main() {
 
-	a := app.New()
-
 	var wg sync.WaitGroup
-	//catIDX := binding.NewInt()
+
+	// UI bindings (fancy fyne mutex globals)
 	lodSelect := binding.NewInt()
 	ext := binding.NewString()
 	catalogID := binding.NewString()
 	catalogName := binding.NewString()
 
+	// The GUI
+	a := app.New()
 	w := a.NewWindow("vestaluna")
 	w.Resize(fyne.NewSize(960, 420))
 
+	// Pull and serve (simfle) data for the UI
 	xmlList, _ := tools.ReadApiEndpoints("apiEndPoints.txt")
-
 	sc := pullSimpleCatalogData(xmlList)
 
 	listView := widget.NewList(func() int {
@@ -142,6 +143,7 @@ func main() {
 		container.NewVBox(
 
 			container.NewMax(contentText),
+			// Get tiles a user has requested
 			widget.NewButton("Download", func() {
 				//TODO: how to get the right index down here after it's set up there..
 				catIDCurrent, err := catalogID.Get()
