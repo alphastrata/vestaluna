@@ -149,7 +149,7 @@ func main() {
 
 				lod, _ := lodSelect.Get()
 
-				tools.ConcatWithPython(dirpath, lod)
+				tools.ConcatWithPython(dirpath, lod-1) // Again, the LOD is set by the UI which is NOT 0 indexed
 				log.Println("Concatenation Complete")
 				pbar.Hide()
 
