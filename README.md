@@ -1,8 +1,7 @@
 vestaluna
 
-TODO:
-## Docs:
-- `godoc -http:=6060` then in your browser hit up `http://localhost:6060/pkg/`
+## TODO:
+- Need Docs to support >>> `godoc -http:=6060` then in your browser hit up `http://localhost:6060/pkg/`
 - Need to scrape all these for WMTSCapabilities.xml entries... `https://trek.nasa.gov/tiles/apidoc/index.html`
 - Need to sort the unresponsive UI when downloading -- or do we keep that?
 - Need to address the elephant in the room which is rate-limiting, the NASA api will limit you to 1000 requests per 24 hour period, that's not a lot of tiles considering the amounts the app could try to fetch (42k for example).
