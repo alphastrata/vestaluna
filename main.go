@@ -40,36 +40,6 @@ func Preview() {
 	w.ShowAndRun()
 }
 
-func Fetch1sOnStartup(sc []wmts.SimpleCatalog, wg *sync.WaitGroup) bool {
-	defer wg.Done()
-	fetchWg := sync.WaitGroup{}
-	for idx := 1; idx < len(sc); idx++ {
-		dirpath := filepath.Join("stitched_results", "2_"+sc[idx].Catalog+".jpg") //NOTE: Explicity using jpeg for all textures atm in the GUI version of the tool
-		if !wmts.IsAlreadyDownloaded(dirpath) {
-			fetchWg.Add(1)
-			go func() {
-				defer fetchWg.Done()
-				log.Println("Fetching preview for: ", dirpath)
-				if !wmts.FetchExact(sc[idx].XMLLocation, 2) {
-					log.Println("Failed to get:", dirpath)
-				}
-				log.Println("Fetched preview")
-
-			}()
-		}
-		log.Println(sc[idx].XMLLocation, "Is ok disk.")
-	}
-
-	//NOTE DON'T GOROUTINE THE PYTHON CALLS!
-	fetchWg.Wait()
-	for idx := 0; idx < len(sc); idx++ {
-		dirpath := filepath.Join("downloads", sc[idx].Catalog)
-		tools.ConcatWithPython(dirpath, 2)
-	}
-
-	return true
-}
-
 func main() {
 
 	var wg sync.WaitGroup
@@ -77,9 +47,6 @@ func main() {
 	// Pull and serve (simfle) data for the UI
 	xmlList, _ := tools.ReadApiEndpoints("apiEndPoints.txt")
 	sc := wmts.PullSimpleCatalogData(xmlList)
-	wg.Add(1)
-	go Fetch1sOnStartup(sc, &wg) //Q: is this gonna clone it for me?
-	wg.Wait()
 
 	// UI bindings (fancy fyne mutex globals)
 	lodSelect := binding.NewInt()
@@ -117,7 +84,8 @@ func main() {
 
 		ext.Set(extension)
 		catalogID.Set(strconv.Itoa(id))
-		lodSelect.Set(sc[id].LODs)
+		//lodSelect.Set(sc[id].LODs)
+		lodSelect.Set(1) // NOTE: start the lod at 0
 
 	}
 
