@@ -9,9 +9,9 @@
 
 ```
 # ABOUT:
-Vestaluna is a simple GUI app that I use for fetching datasets from NASA's trek APIs, this data arrives in tile(wmts) form so, they need to be stitched together to make huge-ass textures, textures which I use on models in blender, and UE5 like (this)[https://www.youtube.com/watch?v=-s9tgamAKEE].
+Vestaluna is a simple GUI app that I use for fetching datasets from NASA's trek APIs, this data arrives in tile(wmts) form so, they need to be stitched together to make huge-ass textures, textures which I use on models in blender, and UE5 like [this](https://www.youtube.com/watch?v=-s9tgamAKEE).
 
-The app itself works like (this)[https://www.youtube.com/watch?v=aCJl8exQUXs].
+The app itself works like [this](https://www.youtube.com/watch?v=aCJl8exQUXs).
 
 Contributions/feedback etc are welcome.
 
