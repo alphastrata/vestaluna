@@ -41,6 +41,14 @@ func Preview() {
 }
 
 func main() {
+	log.Println("Increasing ulimit.")
+	cmd := exec.Command("ulimit -n", "1048576")
+	output, err := cmd.Output()
+	if err != nil {
+		log.Println(err)
+		log.Println(output)
+	}
+	log.Println("Increased.")
 
 	var wg sync.WaitGroup
 
@@ -50,6 +58,7 @@ func main() {
 
 	// UI bindings (fancy fyne mutex globals)
 	lodSelect := binding.NewInt()
+	lodMax := binding.NewInt()
 	ext := binding.NewString()
 	catalogID := binding.NewString()
 	catalogName := binding.NewString()
@@ -57,7 +66,7 @@ func main() {
 	// The GUI
 	a := app.New()
 	w := a.NewWindow("vestaluna")
-	w.Resize(fyne.NewSize(960, 420))
+	w.Resize(fyne.NewSize(1200, 600))
 
 	listView := widget.NewList(func() int {
 		return len(sc)
@@ -85,24 +94,28 @@ func main() {
 		ext.Set(extension)
 		catalogID.Set(strconv.Itoa(id))
 		lodSelect.Set(1) // NOTE: start the lod at 0
+		lodMax.Set(sc[id].LODs)
 
 	}
 
 	pbar := widget.NewProgressBarInfinite()
 	pbar.Hide()
 
-	combo := widget.NewSelect([]string{"LOD1", "LOD2", "LOD3", "LOD4", "LOD5", "LOD6", "LOD7", "LOD8"}, func(value string) {
+	combo := widget.NewSelect([]string{"LOD1", "LOD2", "LOD3", "LOD4", "LOD5", "LOD6", "LOD7", "LOD8", "LOD9"}, func(value string) {
 		parsedValue, err := strconv.Atoi(strings.ReplaceAll(value, "LOD", ""))
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		maxLOD, _ := lodSelect.Get()
+		maxLOD, _ := lodMax.Get()
+		log.Println(maxLOD)
 		if parsedValue > maxLOD {
 			lodSelect.Set(maxLOD)
 
+		} else {
+			lodSelect.Set(parsedValue)
+			log.Println(parsedValue)
 		}
-		lodSelect.Set(parsedValue)
 	})
 	combo.SetSelectedIndex(0)
 
@@ -112,6 +125,7 @@ func main() {
 		container.NewVBox(
 
 			container.NewMax(contentText),
+
 			// Get tiles a user has requested
 			widget.NewButton("Download", func() {
 				//TODO: how to get the right index down here after it's set up there..
