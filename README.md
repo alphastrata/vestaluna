@@ -1,35 +1,19 @@
-<div id="top"></div>
-<!--
-*** Thanks for checking out the Best-README-Template. If you have a suggestion
-*** that would make this better, please fork the repo and create a pull request
-*** or simply open an issue with the tag "enhancement".
-*** Don't forget to give the project a star!
-*** Thanks again! Now go create something AMAZING! :D
--->
+vestaluna
 
+TODO:
+## Docs:
+- `godoc -http:=6060` then in your browser hit up `http://localhost:6060/pkg/`
+- Need to scrape all these for WMTSCapabilities.xml entries... `https://trek.nasa.gov/tiles/apidoc/index.html`
+- Need to sort the unresponsive UI when downloading -- or do we keep that?
+- Need to address the elephant in the room which is rate-limiting, the NASA api will limit you to 1000 requests per 24 hour period, that's not a lot of tiles considering the amounts the app could try to fetch (42k for example).
+- Need a more elegant way to exit.
+- Need a more elegant way to set the download path -- maybe a user wants their stitched results to go to ~/Pictures for example.
+- Needs a code review from other eyes..
+- UI code needs to be broken out into its own thing.
+- build instructions for cutting a binary the Fyne way.
 
-
-# DONE:
-- fix concat ordering problem
-- fixed simple concat to work -- ordering is still a mess..
-- fixed the open-files limit on the wmts.go scraper
-- fixed up README.md so it's almost serviceable
-- found the `map` issue you're having in `tools.go`
-- get the width/height/row/col numbers from the api for the concatenator in tools/tools.go
-- get tiles onto some geometry (UE5?) or Unity? or Godot, which has go bindings...
-- impl a reader for a database-like for all those WMTSCaps.xml files ey... where are they gonna live?
-- install ue5 on linux
-- investgate a simple gocv viewer?
-- investigate non rectangular (w==h*2) dataset concat problems
-- investigate pipeline from big texture onto shpereical geometry (blender?) (ue5)?
-- investigate the concat not being able to fit everything into ram...
-- investigate the gallery at `8000` on localhost re that github question you posted
-- reimplement smart concat helpers in `tools.go`
-- scrape the WMTS nasa db -- at least so you can get em on the fly.
-- seperate the xml parsing and the scraper, the scraper can go into tools/scraper.go
-- started breakout files into proper packages and dir structure
-- test that the scraper works on scraping tiles from any of the .xml formats provided by the NASA Api
-
+    
+---
 <!-- GETTING STARTED -->
 ## Requirements:
 
@@ -51,16 +35,14 @@
 - `./main` (after you've built it) or,
 - `go run main.go` (if you want to build and run)
 
+
 ## Testing:
 From your terminal of choice:
 
 - `go test -v` (you can omit the `-v` flag if you're only wanting to see failing tests)
 NOTE: there are no tests...
+---
 
-TODO:
-## Docs:
-- `godoc -http:=6060` then in your browser hit up `http://localhost:6060/pkg/`
-- Need to scrape all these for WMTSCapabilities.xml entries... `https://trek.nasa.gov/tiles/apidoc/index.html`
 
 ### Data:
 ```
@@ -72,14 +54,39 @@ https://trek.nasa.gov/tiles/Titan/EQ/Titan_global_32ppd_ColorRatio_v2/1.0.0/WMTS
 https://trek.nasa.gov/tiles/Mars/EQ/Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw/1.0.0/WMTSCapabilities.xml
 ...
 ```
+---
 
-## Gallery:
-![Enceladus_Cassini](https://github.com/alphastrata/vestaluna/tree/dev/assets/previews/0_Enceladus_Cassini_ISS_Global_Mosaic_100m_HPF.jpg)
-![Enceladus_cyl](https://github.com/alphastrata/vestaluna/tree/dev/assets/previews/0_Enceladus_cyl-KH.jpg)
-![LRO_LOLA_ClrRoughness_Global_16ppd](https://github.com/alphastrata/vestaluna/tree/dev/assets/previews/0_LRO_LOLA_ClrRoughness_Global_16ppd.jpg)
-![LRO_LOLA_Shade_Global_128ppd_v04](https://github.com/alphastrata/vestaluna/tree/dev/assets/previews/0_LRO_LOLA_Shade_Global_128ppd_v04.jpg)
-![LRO_LOLA_Shade_Global_256ppd_v06](https://github.com/alphastrata/vestaluna/tree/dev/assets/previews/0_LRO_LOLA_Shade_Global_256ppd_v06.jpg)
-![Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw](https://github.com/alphastrata/vestaluna/tree/dev/assets/previews/0_Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw.jpg)
-![Mars_Viking](https://github.com/alphastrata/vestaluna/tree/dev/assets/previews/0_Mars_Viking_MDIM21_ClrMosaic_global_232m.jpg)
-![Mercury_MESSENGER_mosaic_npole_250m_2013](https://github.com/alphastrata/vestaluna/tree/dev/assets/previews/0_Mercury_MESSENGER_mosaic_npole_250m_2013.jpg)
-![Titan_global_32ppd_ColorRatio_v2](https://github.com/alphastrata/vestaluna/tree/dev/assets/previews/0_Titan_global_32ppd_ColorRatio_v2.jpg)
+## Example Gallery:
+
+- ![Enceladus_Cassini](https://github.com/alphastrata/vestaluna/tree/dev/assets/previews/0_Enceladus_Cassini_ISS_Global_Mosaic_100m_HPF.jpg)
+- ![Enceladus_cyl](https://github.com/alphastrata/vestaluna/tree/dev/assets/previews/0_Enceladus_cyl-KH.jpg)
+- ![LRO_LOLA_ClrRoughness_Global_16ppd](https://github.com/alphastrata/vestaluna/tree/dev/assets/previews/0_LRO_LOLA_ClrRoughness_Global_16ppd.jpg)
+- ![LRO_LOLA_Shade_Global_128ppd_v04](https://github.com/alphastrata/vestaluna/tree/dev/assets/previews/0_LRO_LOLA_Shade_Global_128ppd_v04.jpg)
+- ![LRO_LOLA_Shade_Global_256ppd_v06](https://github.com/alphastrata/vestaluna/tree/dev/assets/previews/0_LRO_LOLA_Shade_Global_256ppd_v06.jpg)
+- ![Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw](https://github.com/alphastrata/vestaluna/tree/dev/assets/previews/0_Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw.jpg)
+- ![Mars_Viking](https://github.com/alphastrata/vestaluna/tree/dev/assets/previews/0_Mars_Viking_MDIM21_ClrMosaic_global_232m.jpg)
+- ![Mercury_MESSENGER_mosaic_npole_250m_2013](https://github.com/alphastrata/vestaluna/tree/dev/assets/previews/0_Mercury_MESSENGER_mosaic_npole_250m_2013.jpg)
+- ![Titan_global_32ppd_ColorRatio_v2](https://github.com/alphastrata/vestaluna/tree/dev/assets/previews/0_Titan_global_32ppd_ColorRatio_v2.jpg)
+    
+---
+# DONE:
+- fix concat ordering problem
+- fixed simple concat to work -- ordering is still a mess..
+- fixed the open-files limit on the wmts.go scraper
+- fixed up README.md so it's almost serviceable
+- found the `map` issue you're having in `tools.go`
+- get the width/height/row/col numbers from the api for the concatenator in tools/tools.go
+- get tiles onto some geometry (UE5?) or Unity? or Godot, which has go bindings...
+- impl a reader for a database-like for all those WMTSCaps.xml files ey... where are they gonna live?
+- install ue5 on linux
+- investgate a simple gocv viewer?
+- investigate non rectangular (w==h*2) dataset concat problems
+- investigate pipeline from big texture onto shpereical geometry (blender?) (ue5)?
+- investigate the concat not being able to fit everything into ram...
+- investigate the gallery at `8000` on localhost re that github question you posted
+- reimplement smart concat helpers in `tools.go`
+- scrape the WMTS nasa db -- at least so you can get em on the fly.
+- seperate the xml parsing and the scraper, the scraper can go into tools/scraper.go
+- started breakout files into proper packages and dir structure
+- test that the scraper works on scraping tiles from any of the .xml formats provided by the NASA Api
+
