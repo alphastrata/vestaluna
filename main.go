@@ -41,15 +41,6 @@ func Preview() {
 }
 
 func main() {
-	log.Println("Increasing ulimit.")
-	cmd := exec.Command("ulimit -n", "1048576")
-	output, err := cmd.Output()
-	if err != nil {
-		log.Println(err)
-		log.Println(output)
-	}
-	log.Println("Increased.")
-
 	var wg sync.WaitGroup
 
 	// Pull and serve (simfle) data for the UI

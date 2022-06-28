@@ -28,7 +28,8 @@ Contributions/feedback etc are welcome.
 - [] Need a more elegant way to set the download path -- maybe a user wants their stitched results to go to ~/Pictures for example.
 - [] Needs a code review from other eyes..
 - [] UI code needs to be broken out into its own thing.
-- [] build instructions for cutting a binary the Fyne way.
+- [] build instructions for cutting a binary the [Fyne way.](https://developer.fyne.io/started/packaging)
+- [] Make an icon for the app with dalle
 
 ---
 
