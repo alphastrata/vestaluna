@@ -22,5 +22,6 @@ go.work
 downloads
 stitched_results
 tmp
+tmp-pkg
 _*
 fyne-cross
