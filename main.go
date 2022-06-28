@@ -3,12 +3,8 @@
 // a NASA database scraper and concatenation tool for equirectangular MASSIVELY detailed datasets.
 //
 
-//TODO: Vsplit this for description/preview window/buttons
-//TODO: The xml read from disk is broken >< stop using the GLOBAL!
-//TODO: create a create image button -> spawn available resolutions dialouge
-//TODO: buttons needs to include the LOD setting
-//TODO: add a depth button/slider to allow us to change the LOD at runtime
-//TODO: progressbars are nice in the cli-tool, how about bringing them into the UI?
+//TODO: impl a preview window of LOD1, for any selected catalog
+
 package main
 
 import (
@@ -25,12 +21,54 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/layout"
 
 	"fyne.io/fyne/v2/widget"
 )
+
+func Preview() {
+	myApp := app.New()
+	w := myApp.NewWindow("Image")
+	w.Resize(fyne.NewSize(960, 420))
+
+	image := canvas.NewImageFromFile("stitched_results/1_Mars_Viking_MDIM21_ClrMosaic_global_232m.jpg")
+	w.SetContent(image)
+
+	w.ShowAndRun()
+}
+
+func Fetch1sOnStartup(sc []wmts.SimpleCatalog, wg *sync.WaitGroup) bool {
+	defer wg.Done()
+	fetchWg := sync.WaitGroup{}
+	for idx := 1; idx < len(sc); idx++ {
+		dirpath := filepath.Join("stitched_results", "2_"+sc[idx].Catalog+".jpg") //NOTE: Explicity using jpeg for all textures atm in the GUI version of the tool
+		if !wmts.IsAlreadyDownloaded(dirpath) {
+			fetchWg.Add(1)
+			go func() {
+				defer fetchWg.Done()
+				log.Println("Fetching preview for: ", dirpath)
+				if !wmts.FetchExact(sc[idx].XMLLocation, 2) {
+					log.Println("Failed to get:", dirpath)
+				}
+				log.Println("Fetched preview")
+
+			}()
+		}
+		log.Println(sc[idx].XMLLocation, "Is ok disk.")
+	}
+
+	//NOTE DON'T GOROUTINE THE PYTHON CALLS!
+	fetchWg.Wait()
+	for idx := 0; idx < len(sc); idx++ {
+		dirpath := filepath.Join("downloads", sc[idx].Catalog)
+		tools.ConcatWithPython(dirpath, 2)
+	}
+
+	return true
+}
 
 func main() {
 
@@ -39,6 +77,9 @@ func main() {
 	// Pull and serve (simfle) data for the UI
 	xmlList, _ := tools.ReadApiEndpoints("apiEndPoints.txt")
 	sc := wmts.PullSimpleCatalogData(xmlList)
+	wg.Add(1)
+	go Fetch1sOnStartup(sc, &wg) //Q: is this gonna clone it for me?
+	wg.Wait()
 
 	// UI bindings (fancy fyne mutex globals)
 	lodSelect := binding.NewInt()

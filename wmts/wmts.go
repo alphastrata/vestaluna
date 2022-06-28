@@ -40,7 +40,7 @@ func buildURL(url string, style string, tileMatrixSet string, zoom *int, row int
 }
 
 //check if the file is already downloaded
-func isAlreadyDownloaded(filename string) bool {
+func IsAlreadyDownloaded(filename string) bool {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		return false
 	}
@@ -254,7 +254,7 @@ func FetchExact(xmlURL string, LOD int) bool {
 				catalog := capabilities.Contents.Layer.Identifier
 				url := buildURL(url, style, tileMatrixSet, &LOD, row, col)
 				filename := makeFilenameFromURL(url, catalog)
-				if !isAlreadyDownloaded(filename) {
+				if !IsAlreadyDownloaded(filename) {
 					if checkURL(url) {
 						downloadURL(url, filename)
 
