@@ -149,10 +149,14 @@ func main() {
 
 				lod, _ := lodSelect.Get()
 
-				tools.ConcatWithPython(dirpath, lod-1) // Again, the LOD is set by the UI which is NOT 0 indexed
-				log.Println("Concatenation Complete")
-				pbar.Hide()
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					tools.ConcatWithPython(dirpath, lod-1) // Again, the LOD is set by the UI which is NOT 0 indexed
+					log.Println("Concatenation Complete")
+					pbar.Hide()
 
+				}()
 			}),
 			widget.NewButton("Tiles", func() {
 				catID, _ := catalogID.Get()
@@ -160,27 +164,36 @@ func main() {
 				dirpath := filepath.Join("downloads", sc[idx].Catalog)
 
 				log.Println("Opening disk")
-				cmd := exec.Command("xdg-open", dirpath)
-				err := cmd.Run()
-				if err != nil {
-					log.Println(err)
-				}
-
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					cmd := exec.Command("xdg-open", dirpath)
+					err := cmd.Run()
+					if err != nil {
+						log.Println(err)
+					}
+				}()
 			}),
 			widget.NewButton("ConcatResults", func() {
 				catID, _ := catalogID.Get()
 
 				lod, _ := lodSelect.Get()
 				idx, _ := strconv.Atoi(catID)
-				result := strconv.Itoa(lod) + "_" + sc[idx].Catalog + ".jpg"
+				result := strconv.Itoa(lod-1) + "_" + sc[idx].Catalog + ".jpg"
 				concatPath := filepath.Join("stitched_results", result)
 
-				cmd := exec.Command("xdg-open", concatPath)
-				err := cmd.Run()
-				if err != nil {
-					log.Println(err)
-				}
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					cmd := exec.Command("xdg-open", concatPath)
+					output, err := cmd.Output()
+					//err := cmd.Run()
+					if err != nil {
+						log.Println(err)
+						log.Println(output)
+					}
 
+				}()
 			}),
 			combo,
 			layout.NewSpacer(),
