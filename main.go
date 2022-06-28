@@ -84,7 +84,6 @@ func main() {
 
 		ext.Set(extension)
 		catalogID.Set(strconv.Itoa(id))
-		//lodSelect.Set(sc[id].LODs)
 		lodSelect.Set(1) // NOTE: start the lod at 0
 
 	}
@@ -136,6 +135,8 @@ func main() {
 					if err != nil {
 						log.Fatal("Error lod.Get()", err)
 					}
+					lod = lod - 1 // the LOD is set by the UI which is NOT 0 indexed
+
 					log.Println("Downloading...")
 					if wmts.FetchExact(sc[idx].XMLLocation, lod) {
 						log.Println("Download Complete")
@@ -159,9 +160,13 @@ func main() {
 					idx, _ := strconv.Atoi(catID)
 					dirpath := filepath.Join("downloads", sc[idx].Catalog)
 
-					lod, _ := lodSelect.Get()
+					lod, err := lodSelect.Get()
+					if err != nil {
+						log.Fatal("Error lod.Get()", err)
+					}
+					lod = lod - 1 // the LOD is set by the UI which is NOT 0 indexed
 
-					tools.ConcatWithPython(dirpath, lod-1) // Again, the LOD is set by the UI which is NOT 0 indexed
+					tools.ConcatWithPython(dirpath, lod)
 					log.Println("Concatenation Complete")
 					pbar.Hide()
 
@@ -190,9 +195,14 @@ func main() {
 					defer wg.Done()
 					catID, _ := catalogID.Get()
 
-					lod, _ := lodSelect.Get()
+					lod, err := lodSelect.Get()
+					if err != nil {
+						log.Fatal("Error lod.Get()", err)
+					}
+					lod = lod - 1 // the LOD is set by the UI which is NOT 0 indexed
+
 					idx, _ := strconv.Atoi(catID)
-					result := strconv.Itoa(lod-1) + "_" + sc[idx].Catalog + ".jpg"
+					result := strconv.Itoa(lod) + "_" + sc[idx].Catalog + ".jpg"
 					concatPath := filepath.Join("stitched_results", result)
 
 					cmd := exec.Command("xdg-open", concatPath)

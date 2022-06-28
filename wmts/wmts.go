@@ -210,7 +210,6 @@ func loadCatalog(wmtsXML string) Capabilities {
 
 // Fetch an exact dataset pertaining to a specific LOD
 func FetchExact(xmlURL string, LOD int) bool {
-	LOD = LOD - 1 // Comes in from a 1th index not a 0th from the UI
 	var misses []string
 	var wg sync.WaitGroup
 
