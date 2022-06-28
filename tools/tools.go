@@ -2,12 +2,27 @@ package tools
 
 import (
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 
 	"log"
 )
+
+func InitDirStructure() {
+	log.Println("Initialising dir structure.")
+
+	dirs := []string{"downloads", "stitched_results"}
+	for _, d := range dirs {
+		if _, err := os.Stat(d); os.IsNotExist(err) {
+			os.MkdirAll(d, 0777)
+		}
+
+	}
+	log.Println("dir structure created.")
+
+}
 
 func ReadApiEndpoints(filepath string) ([]string, error) {
 	file, err := ioutil.ReadFile(filepath)

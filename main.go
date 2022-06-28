@@ -41,6 +41,7 @@ func Preview() {
 }
 
 func main() {
+	tools.InitDirStructure()
 	var wg sync.WaitGroup
 
 	// Pull and serve (simfle) data for the UI

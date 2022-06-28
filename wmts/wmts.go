@@ -56,7 +56,7 @@ func makeFilenameFromURL(url string, catalog string) string {
 	//Make that catalog dir if it doesn't exist
 	catalogpath := filepath.Join("downloads", catalog)
 	if _, err := os.Stat(catalogpath); os.IsNotExist(err) {
-		os.Mkdir(catalogpath, 0777)
+		os.MkdirAll(catalogpath, 0777)
 	}
 
 	sp = filepath.Join(catalogpath, sp)
