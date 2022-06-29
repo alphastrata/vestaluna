@@ -10,16 +10,15 @@ from datetime import datetime
 import sys
 
 target = sys.argv[1]
-rel_or_debug = sys.argv[2]
 
 if __name__ == "__main__":
     print("Building app...")
-    release_stamp =str(datetime.now().timestamp()).split(" ")[0].replace("-", "")
+    release_stamp =datetime.now().strftime("%d-%m-%Y")
 
     match target:
         ## WINDOWS ##
         case "win":
-            os.system(f"fyne-cross {target} -release -icon assets/icons/vestaluna_logo.png")
+            os.system("fyne-cross windows -console -debug -icon assets/icons/vestaluna_logo.png")
             print("Copying assets...")
             os.system("cp -r scripts fyne-cross/bin/windows-amd64")
             os.system("cp -r apiEndPoints.txt fyne-cross/bin/windows-amd64")
@@ -29,7 +28,7 @@ if __name__ == "__main__":
         
         ## MAC DARWIN ##
         case "mac":
-            os.system(f"fyne-cross {target} -ap-id vestaluna -release -icon assets/icons/vestaluna_logo.png")
+            os.system(f"fyne-cross darwin -ap-id vestaluna -release -icon assets/icons/vestaluna_logo.png")
             print("Copying assets...")
             os.system("cp -r scripts fyne-cross/bin/darwin-amd64")
             os.system("cp -r apiEndPoints.txt fyne-cross/bin/darwin-amd64")
@@ -39,7 +38,7 @@ if __name__ == "__main__":
 
         ## LINUX ##
         case _:
-            os.system(f"fyne-cross {target} -release -icon assets/icons/vestaluna_logo.png")
+            os.system(f"fyne-cross linux -release -icon assets/icons/vestaluna_logo.png")
             print("Copying assets...")
             os.system("cp -r scripts fyne-cross/bin/linux-amd64")
             os.system("cp -r apiEndPoints.txt fyne-cross/bin/linux-amd64")

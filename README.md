@@ -18,18 +18,18 @@ The app itself works like [this](https://www.youtube.com/watch?v=aCJl8exQUXs).
 Contributions/feedback etc are welcome.
 
 ## ROADMAP:
-
-- [] Need to address the elephant in the room which is rate-limiting, the NASA api will limit you to 1000 requests per hour, that's not a lot of tiles considering the amounts the app could try to fetch (42k for example).
-- [] fix too many open files... [latest crash on my system was a 2048 img fetch] `ps -aux| rg vestaluna`
+- [] BUILD> fix the nesting of the build script so that it creates a nicer structure when unpacked on user's machine
+- [] BUILD> need to get icon into the binary for the above...
+- [] BUILD> need to have python fetch it's own requirements etc if unable to run... (it's not possible to bundle them all... eh)
 - [] Need Docs to support >>> `godoc -http:=6060` then in your browser hit up `http://localhost:6060/pkg/`
+- [] Need to address the elephant in the room which is rate-limiting, the NASA api will limit you to 1000 requests per hour, that's not a lot of tiles considering the amounts the app could try to fetch (42k for example).
 - [] Need to scrape all these for WMTSCapabilities.xml entries... `https://trek.nasa.gov/tiles/apidoc/index.html`
 - [] Need to sort the unresponsive UI when downloading -- or do we keep that?
-- [] Need a more elegant way to exit. TODO: quit button
-- [] Need a more elegant way to set the download path -- maybe a user wants their stitched results to go to ~/Pictures for example.
-- [] Needs a code review from other eyes..
-- [] UI code needs to be broken out into its own thing.
-- [] build instructions for cutting a binary the [Fyne way.](https://developer.fyne.io/started/packaging)
-- [] Make an icon for the app with dalle
+- [] Need a code review from other eyes..
+- [] UI> Need a more elegant way to exit. TODO: quit button
+- [] UI> Need a more elegant way to set the download path -- maybe a user wants their stitched results to go to ~/Pictures for example.
+- [] UI> UI code needs to be broken out into its own thing.
+- [] fix too many open files... [latest crash on my system was a 2048 img fetch] `ps -aux| rg vestaluna`
 
 ---
 
@@ -122,3 +122,5 @@ https://trek.nasa.gov/tiles/Mars/EQ/Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_
 - [x] seperate the xml parsing and the scraper, the scraper can go into tools/scraper.go
 - [x] started breakout files into proper packages and dir structure
 - [x] test that the scraper works on scraping tiles from any of the .xml formats provided by the NASA Api
+- [x] build instructions for cutting a binary the [Fyne way.](https://developer.fyne.io/started/packaging)
+- [x] Make an icon for the app with dalle

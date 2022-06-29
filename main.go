@@ -21,27 +21,26 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
-	"fyne.io/fyne/v2/layout"
 
 	"fyne.io/fyne/v2/widget"
 )
 
-func Preview() {
-	myApp := app.New()
-	w := myApp.NewWindow("Image")
-	w.Resize(fyne.NewSize(960, 420))
-
-	image := canvas.NewImageFromFile("stitched_results/1_Mars_Viking_MDIM21_ClrMosaic_global_232m.jpg")
-	w.SetContent(image)
-
-	w.ShowAndRun()
-}
+//func Preview() {
+//	myApp := app.New()
+//	w := myApp.NewWindow("Image")
+//	w.Resize(fyne.NewSize(960, 420))
+//
+//	image := canvas.NewImageFromFile("stitched_results/1_Mars_Viking_MDIM21_ClrMosaic_global_232m.jpg")
+//	w.SetContent(image)
+//
+//	w.ShowAndRun()
+//}
 
 func main() {
 	tools.InitDirStructure()
+
 	var wg sync.WaitGroup
 
 	// Pull and serve (simfle) data for the UI
@@ -100,132 +99,130 @@ func main() {
 		}
 
 		maxLOD, _ := lodMax.Get()
-		log.Println(maxLOD)
 		if parsedValue > maxLOD {
 			lodSelect.Set(maxLOD)
 
 		} else {
 			lodSelect.Set(parsedValue)
-			log.Println(parsedValue)
 		}
 	})
 	combo.SetSelectedIndex(0)
 
-	split := container.NewHSplit(
+	split := container.NewVBox(
+		container.NewHSplit(
 
-		listView,
-		container.NewVBox(
+			listView,
+			container.NewVBox(
 
-			container.NewMax(contentText),
+				container.NewMax(contentText),
 
-			// Get tiles a user has requested
-			widget.NewButton("Download", func() {
-				//TODO: how to get the right index down here after it's set up there..
-				catIDCurrent, err := catalogID.Get()
-				if err != nil {
-					log.Fatal("Error catalogID.Get()", err)
-				}
-
-				catID, err := strconv.Atoi(catIDCurrent)
-				if err != nil {
-					log.Fatal("Error parsing catIDCurrent into int -- maybe it received invalid data", err)
-				}
-
-				pbar.Show()
-
-				wg.Add(1)
-				go func(wg *sync.WaitGroup, idx int) {
-					defer wg.Done()
-
-					lod, err := lodSelect.Get()
+				// Get tiles a user has requested
+				widget.NewButton("Download", func() {
+					//TODO: how to get the right index down here after it's set up there..
+					catIDCurrent, err := catalogID.Get()
 					if err != nil {
-						log.Fatal("Error lod.Get()", err)
-					}
-					lod = lod - 1 // the LOD is set by the UI which is NOT 0 indexed
-
-					log.Println("Downloading...")
-					if wmts.FetchExact(sc[idx].XMLLocation, lod) {
-						log.Println("Download Complete")
-						pbar.Hide()
-					} else {
-						log.Println("Download was incomplete...")
-						wmts.FetchExact(sc[idx].XMLLocation, lod)
+						log.Fatal("Error catalogID.Get()", err)
 					}
 
-				}(&wg, catID)
-				wg.Wait()
-			}),
+					catID, err := strconv.Atoi(catIDCurrent)
+					if err != nil {
+						log.Fatal("Error parsing catIDCurrent into int -- maybe it received invalid data", err)
+					}
 
-			widget.NewButton("Concat", func() {
-				wg.Add(1)
-				go func() {
-					defer wg.Done()
-					log.Println("Concatenating")
 					pbar.Show()
-					catID, _ := catalogID.Get()
-					idx, _ := strconv.Atoi(catID)
-					dirpath := filepath.Join("downloads", sc[idx].Catalog)
 
-					lod, err := lodSelect.Get()
-					if err != nil {
-						log.Fatal("Error lod.Get()", err)
-					}
-					lod = lod - 1 // the LOD is set by the UI which is NOT 0 indexed
+					wg.Add(1)
+					go func(wg *sync.WaitGroup, idx int) {
+						defer wg.Done()
 
-					tools.ConcatWithPython(dirpath, lod)
-					log.Println("Concatenation Complete")
-					pbar.Hide()
+						lod, err := lodSelect.Get()
+						if err != nil {
+							log.Fatal("Error lod.Get()", err)
+						}
+						lod = lod - 1 // the LOD is set by the UI which is NOT 0 indexed
 
-				}()
-			}),
-			widget.NewButton("Tiles", func() {
-				wg.Add(1)
-				go func() {
-					defer wg.Done()
-					catID, _ := catalogID.Get()
-					idx, _ := strconv.Atoi(catID)
-					dirpath := filepath.Join("downloads", sc[idx].Catalog)
+						log.Println("Downloading...")
+						if wmts.FetchExact(sc[idx].XMLLocation, lod) {
+							log.Println("Download Complete")
+							pbar.Hide()
+						} else {
+							log.Println("Download was incomplete...")
+							wmts.FetchExact(sc[idx].XMLLocation, lod)
+						}
 
-					log.Println("Opening disk")
-					cmd := exec.Command("xdg-open", dirpath)
-					output, err := cmd.Output()
-					if err != nil {
-						log.Println(err)
-						log.Println(output)
-					}
-				}()
-			}),
-			widget.NewButton("ConcatResults", func() {
-				wg.Add(1)
-				go func() {
-					defer wg.Done()
-					catID, _ := catalogID.Get()
+					}(&wg, catID)
+					wg.Wait()
+				}),
 
-					lod, err := lodSelect.Get()
-					if err != nil {
-						log.Fatal("Error lod.Get()", err)
-					}
-					lod = lod - 1 // the LOD is set by the UI which is NOT 0 indexed
+				widget.NewButton("Concat", func() {
+					wg.Add(1)
+					go func() {
+						defer wg.Done()
+						log.Println("Concatenating")
+						pbar.Show()
+						catID, _ := catalogID.Get()
+						idx, _ := strconv.Atoi(catID)
+						dirpath := filepath.Join("downloads", sc[idx].Catalog)
 
-					idx, _ := strconv.Atoi(catID)
-					result := strconv.Itoa(lod) + "_" + sc[idx].Catalog + ".jpg"
-					concatPath := filepath.Join("stitched_results", result)
+						lod, err := lodSelect.Get()
+						if err != nil {
+							log.Fatal("Error lod.Get()", err)
+						}
+						lod = lod - 1 // the LOD is set by the UI which is NOT 0 indexed
 
-					cmd := exec.Command("xdg-open", concatPath)
-					output, err := cmd.Output()
-					if err != nil {
-						log.Println(err)
-						log.Println(output)
-					}
+						tools.ConcatWithPython(dirpath, lod)
+						log.Println("Concatenation Complete")
+						pbar.Hide()
 
-				}()
-			}),
-			combo,
-			layout.NewSpacer(),
-			pbar,
+					}()
+				}),
+				widget.NewButton("Tiles", func() {
+					wg.Add(1)
+					go func() {
+						defer wg.Done()
+						catID, _ := catalogID.Get()
+						idx, _ := strconv.Atoi(catID)
+						dirpath := filepath.Join("downloads", sc[idx].Catalog)
+
+						log.Println("Opening disk")
+						cmd := exec.Command("xdg-open", dirpath)
+						output, err := cmd.Output()
+						if err != nil {
+							log.Println(err)
+							log.Println(output)
+						}
+					}()
+				}),
+				widget.NewButton("ConcatResults", func() {
+					wg.Add(1)
+					go func() {
+						defer wg.Done()
+						catID, _ := catalogID.Get()
+
+						lod, err := lodSelect.Get()
+						if err != nil {
+							log.Fatal("Error lod.Get()", err)
+						}
+						lod = lod - 1 // the LOD is set by the UI which is NOT 0 indexed
+
+						idx, _ := strconv.Atoi(catID)
+						result := strconv.Itoa(lod) + "_" + sc[idx].Catalog + ".jpg"
+						concatPath := filepath.Join("stitched_results", result)
+
+						cmd := exec.Command("xdg-open", concatPath)
+						output, err := cmd.Output()
+						if err != nil {
+							log.Println(err)
+							log.Println(output)
+						}
+
+					}()
+				}),
+				combo,
+				pbar,
+			),
 		),
 	)
-
 	w.SetContent(split)
 
 	w.ShowAndRun()

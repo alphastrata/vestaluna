@@ -6,6 +6,12 @@ import sys
 
 
 if __name__ == "__main__":
+
+    # Install dependencies:
+    print("installing dependencies")
+    os.system("pip install -r requirements.txt")
+    print("installed python dependencies")
+
     completed = "stitched_results"
 
     tiles_path = f"{sys.argv[1]}"
