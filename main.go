@@ -3,14 +3,10 @@
 // a NASA database scraper and concatenation tool for equirectangular MASSIVELY detailed datasets.
 //
 
-//TODO: impl a preview window of LOD1, for any selected catalog
-
 package main
 
 import (
 	"fmt"
-	"image"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -26,6 +22,7 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/layout"
 
 	"fyne.io/fyne/v2/widget"
 )
@@ -84,16 +81,9 @@ func main() {
 	pbar := widget.NewProgressBarInfinite()
 	pbar.Hide()
 
-	f, err := os.Open("./stitched_results/Enceladus_cyl-KH.jpg")
-	if err != nil {
-		log.Fatal("Unable to open", f)
-	}
-	img, _, err := image.Decode(f)
-	if err != nil {
-		log.Fatal("Unable to decode", img)
-	}
-
-	preview := canvas.NewImageFromImage(img)
+	preview := canvas.NewImageFromFile("stitched_results/0_Enceladus_cyl-KH.jpg")
+	//preview.FillMode = canvas.ImageFillStretch
+	preview.FillMode = canvas.ImageFillContain
 
 	// intentionally hardcoded for the moment -- anything over LOD4 will take a LONGLONG time to dl-- not because of filesizes, but rate-limiting
 	combo := widget.NewSelect([]string{"LOD1", "LOD2", "LOD3", "LOD4", "LOD5", "LOD6", "LOD7", "LOD8", "LOD9"}, func(value string) {
@@ -223,6 +213,7 @@ func main() {
 			}),
 			combo,
 			pbar,
+			layout.NewSpacer(),
 			preview,
 		),
 	)
