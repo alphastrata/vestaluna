@@ -9,6 +9,8 @@ package main
 
 import (
 	"fmt"
+	"image"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -21,6 +23,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 
@@ -46,7 +49,7 @@ func main() {
 	// The GUI
 	a := app.New()
 	w := a.NewWindow("vestaluna")
-	w.Resize(fyne.NewSize(1200, 600))
+	w.Resize(fyne.NewSize(1400, 600))
 
 	listView := widget.NewList(func() int {
 		return len(sc)
@@ -62,8 +65,8 @@ func main() {
 
 	ctTextBind := binding.NewString()
 	ctTextBind.Set("Select a catalog")
-	contentText := widget.NewLabelWithData(ctTextBind)
 
+	contentText := widget.NewLabelWithData(ctTextBind)
 	contentText.Wrapping = fyne.TextWrapWord
 
 	listView.OnSelected = func(id widget.ListItemID) {
@@ -80,6 +83,17 @@ func main() {
 
 	pbar := widget.NewProgressBarInfinite()
 	pbar.Hide()
+
+	f, err := os.Open("./stitched_results/Enceladus_cyl-KH.jpg")
+	if err != nil {
+		log.Fatal("Unable to open", f)
+	}
+	img, _, err := image.Decode(f)
+	if err != nil {
+		log.Fatal("Unable to decode", img)
+	}
+
+	preview := canvas.NewImageFromImage(img)
 
 	// intentionally hardcoded for the moment -- anything over LOD4 will take a LONGLONG time to dl-- not because of filesizes, but rate-limiting
 	combo := widget.NewSelect([]string{"LOD1", "LOD2", "LOD3", "LOD4", "LOD5", "LOD6", "LOD7", "LOD8", "LOD9"}, func(value string) {
@@ -98,7 +112,7 @@ func main() {
 	})
 	combo.SetSelectedIndex(0)
 
-	//container.NewVBox(
+	//INFO: The layout
 	split := container.NewHSplit(
 		listView,
 		container.NewVBox(
@@ -209,6 +223,7 @@ func main() {
 			}),
 			combo,
 			pbar,
+			preview,
 		),
 	)
 	w.SetContent(split)
